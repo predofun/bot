@@ -1,28 +1,49 @@
-# Vercel AI with Crossmint Solana Custodial Wallets Example
+# Predo Bot 🎲🤖
 
-## Setup
+## Overview
+Predo is an innovative Telegram bot that leverages AI and blockchain technology to create, manage, and resolve decentralized betting experiences. Built with TypeScript and Solana, Predo provides a seamless, interactive platform for users to engage in predictive betting.
 
-Copy the `.env.template` and populate with your values.
+## 🌟 Features
 
-```
-cp .env.template .env
-```
+### 1. Decentralized Betting
+- Create bets using natural language
+- Join ongoing bets
+- Resolve bets with AI-powered outcome verification
 
-## Usage
+### 2. Wallet Management
+- Automatic wallet creation
+- Balance checking
+- USDC transaction support
 
-1. Create a custodial wallet attached to an email address.
+### 3. AI-Powered Interactions
+- Natural language command processing
+- Intelligent bet creation and resolution
+- Advanced command classification
 
-```
-npx ts-node create-custodial-wallet.ts
-```
+## 🚀 Tech Stack
+- **Language**: TypeScript
+- **Blockchain**: Solana
+- **Bot Framework**: Telegraf
+- **AI Services**:
+  - Google Gemini
+  - Perplexity AI
+- **Wallet Management**: Crossmint
+- **Database**: MongoDB
 
-3. Get the custodial wallet address and add it to the `.env` file.
-```
-CUSTODIAL_WALLET_ADDRESS=<your custodial wallet address>
-```
+## 🔧 Setup & Installation
 
-4. Run the example.
-```
-npx ts-node index.ts
-```
-# bot
+### Prerequisites
+- Node.js (v18+)
+- Telegram Account
+- Solana Wallet
+- API Keys:
+  - Telegram Bot Token
+  - Gemini API Key
+  - Crossmint API Key
+  - Perplexity API Key
+
+### Installation Steps
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/predo-bot.git
+cd predo-bot
