@@ -1,0 +1,37 @@
+{
+    "name": "goat-examples-vercel-ai-crossmint-solana-custodial-wallets",
+    "version": "0.2.5",
+    "description": "",
+    "private": true,
+    "scripts": {
+        "start": "ts-node index.ts",
+        "dev": "nodemon --exec ts-node index.ts",
+        "test": "vitest run --passWithNoTests"
+    },
+    "main": "index.ts",
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "@ai-sdk/google": "^1.0.12",
+        "@ai-sdk/openai": "^1.0.4",
+        "@ai-sdk/openai-compatible": "^0.0.11",
+        "@goat-sdk/adapter-vercel-ai": "",
+        "@goat-sdk/core": "",
+        "@goat-sdk/crossmint": "",
+        "@goat-sdk/plugin-solana-nfts": "",
+        "@goat-sdk/wallet-solana": "",
+        "@solana/spl-token": "^0.4.9",
+        "@solana/web3.js": "^1.98.0",
+        "ai": "",
+        "axios": "^1.7.9",
+        "dotenv": "^16.4.7",
+        "mongoose": "^8.9.2",
+        "telegraf": "^4.16.3",
+        "viem": "2.21.49",
+        "zod": "^3.24.1"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.22",
+        "ts-node": "^10.9.2"
+    }
+}

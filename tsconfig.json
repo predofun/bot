@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "outDir": "dist",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "strict": false,
+        "target": "es6",
+        "module": "commonjs"
+    },
+    "include": ["index.ts", "utils/**/*.ts", "models/**/*.ts", "config/environment.ts", "config/db.ts"],
+    "exclude": ["node_modules", "dist"]
+}
