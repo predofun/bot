@@ -18,7 +18,8 @@ export default async function createBet(ctx) {
   const bet = await Bet.create({
     betId: `PRE-${Math.random().toString(36).substring(2, 4)}${Math.random()
       .toString(36)
-      .substring(2, 5)}`,
+      .substring(2, 5)
+      .toLowerCase()}`,
     groupId: ctx.chat.id,
     title: betDetails.title,
     options: betDetails.options,

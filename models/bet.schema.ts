@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose'
+import mongoose, { Schema, Document } from 'mongoose';
 
 interface IBet extends Document {
   betId: string;
@@ -20,11 +20,11 @@ const BetSchema: Schema = new Schema({
   minAmount: { type: Number, required: true },
   groupId: { type: String, required: true },
   endTime: { type: Date, required: true },
-  participants: { type: [String], default: [] },
+  participants: { type: [mongoose.Schema.Types.ObjectId], default: [] },
   votes: { type: Map, of: Number, default: {} },
   resolved: { type: Boolean, default: false }
 });
 
 const Bet = mongoose.model<IBet>('Bet', BetSchema);
 
-export default Bet
+export default Bet;

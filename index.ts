@@ -97,10 +97,7 @@ bot.on('message', async (ctx) => {
   //@ts-ignore
   const inputText = ctx.update.message?.text;
 
-  if (
-    (mentionRegex.test(inputText) && ctx.chat.type === 'group') ||
-    ctx.chat.type === 'private'
-  ) {
+  if ((mentionRegex.test(inputText) && ctx.chat.type === 'group') || ctx.chat.type === 'private') {
     // Bot was mentioned, respond to the message
     //@ts-ignore
     const input = inputText;
@@ -109,19 +106,19 @@ bot.on('message', async (ctx) => {
       console.log(command);
       switch (command) {
         case 'balance':
-          console.log('getting balance')
+          console.log('getting balance');
           return getBalance(ctx);
         // case 'fund':
         //   return fundWallet();
         case 'bet':
-          console.log('betting')
+          console.log('betting');
           return createBet(ctx);
         case 'join':
           return joinBet(ctx);
         case 'resolve':
           return resolveBet(ctx);
         default:
-          console.log('default response')
+          console.log('default response');
           ctx.reply(`${command}`);
       }
     }
@@ -129,11 +126,17 @@ bot.on('message', async (ctx) => {
 });
 
 // Start the bot
-bot.launch().then(async () => {
-  await connectDb();
-  console.log('Predo bot is running!');
-});
-
+bot
+  .launch({
+    webhook: {
+      domain: 'https://bot-production-707c.up.railway.app',
+      port: 10000
+    }
+  })
+  .then(async () => {
+    await connectDb();
+    console.info(`The bot ${bot.botInfo.username} is running on server`);
+  });
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
