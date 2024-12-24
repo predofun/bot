@@ -5,7 +5,9 @@ import Bet from '../models/bet.schema';
 
 export default async function createBet(ctx) {
   const input =
-    ctx.message.text.split('/bet')[1]?.trim() || ctx.message.text.split(`@predofun_bot`)[1]?.trim();
+    ctx.message.text.split('/bet')[1]?.trim() ||
+    ctx.message.text.split(`@predofun_bot`)[1]?.trim() ||
+    ctx.message.text.trim();
   if (!input) {
     ctx.reply(
       'To create a bet, use natural language to describe the bet, including details like the bet amount and end time. For example: "Create a bet on whether it will rain tomorrow, minimum bet 5 USDC, ending in 24 hours"'

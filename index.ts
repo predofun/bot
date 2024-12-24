@@ -97,10 +97,10 @@ bot.on('message', async (ctx) => {
   //@ts-ignore
   const inputText = ctx.update.message?.text;
 
-  if ((mentionRegex.test(inputText) && ctx.chat.type === 'group') || ctx.chat.type === 'private') {
-    // Bot was mentioned, respond to the message
+  if (ctx.chat.type === 'private' || (mentionRegex.test(inputText) && ctx.chat.type === 'group')) {
+    // Bot was mentioned in a group or in a private chat, respond to the message
     //@ts-ignore
-    const input = inputText;
+    const input = inputText?.replace(mentionRegex, '').trim();
     if (input) {
       const { result: command } = await classifyCommand(input);
       console.log(command);
@@ -108,8 +108,6 @@ bot.on('message', async (ctx) => {
         case 'balance':
           console.log('getting balance');
           return getBalance(ctx);
-        // case 'fund':
-        //   return fundWallet();
         case 'bet':
           console.log('betting');
           return createBet(ctx);
@@ -119,7 +117,7 @@ bot.on('message', async (ctx) => {
           return resolveBet(ctx);
         default:
           console.log('default response');
-          ctx.reply(`${command}`);
+          ctx.reply(command);
       }
     }
   }
