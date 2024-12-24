@@ -98,8 +98,6 @@ bot.on('message', async (ctx) => {
   const inputText = ctx.update.message?.text;
 
   if (ctx.chat.type === 'private' || (mentionRegex.test(inputText) && ctx.chat.type === 'group')) {
-    // Bot was mentioned in a group or in a private chat, respond to the message
-    //@ts-ignore
     const input = inputText?.replace(mentionRegex, '').trim();
     if (input) {
       const { result: command } = await classifyCommand(input);

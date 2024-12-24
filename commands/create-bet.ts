@@ -37,9 +37,7 @@ export default async function createBet(ctx) {
     'https://res.cloudinary.com/dbuaprzc0/image/upload/v1735006898/predo/obljk4tsuoinqlfz3i56.gif'
   ];
   const message = await ctx.reply(
-    `Bet created with id: ${bet.betId.toUpperCase()}\nGo wager now at: https://predo.fun/bets/${
-      bet.betId
-    }`
+    `Bet created with id: ${bet.betId.toLowerCase()}\n`
   )
   await ctx.pinChatMessage(message.message_id);
 }
