@@ -127,7 +127,7 @@ bot.on('message', async (ctx) => {
 bot
   .launch({
     webhook: {
-      domain: 'https://bot-production-707c.up.railway.app',
+      domain: 'https://predo-bot-production.up.railway.app',
       port: 10000
     }
   })

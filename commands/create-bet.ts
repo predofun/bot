@@ -1,6 +1,4 @@
-import { Context } from 'telegraf';
 import { extractBetDetails } from '../utils/gemini';
-import { MyContext } from '..';
 import Bet from '../models/bet.schema';
 
 export default async function createBet(ctx) {
