@@ -42,6 +42,6 @@ export default async function createBet(ctx) {
     `Bet created with id: ${bet.betId.toUpperCase()}\nGo wager now at: https://predo.fun/bets/${
       bet.betId
     }`
-  );
+  )
   await ctx.pinChatMessage(message.message_id);
 }
