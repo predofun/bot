@@ -126,7 +126,7 @@ bot
   .launch({
     webhook: {
       domain: 'https://predo-bot-production.up.railway.app',
-      port: 10000
+      port: 8000
     }
   })
   .then(async () => {
