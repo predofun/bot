@@ -4,6 +4,7 @@ import { generateObject, generateText } from 'ai';
 import { z } from 'zod';
 import { env } from '../config/environment';
 import { commands } from './helper';
+import perplexity from './perplexity';
 
 const google = createGoogleGenerativeAI({
   apiKey: env.GEMINI_API_KEY
@@ -11,17 +12,15 @@ const google = createGoogleGenerativeAI({
 
 export async function extractBetDetails(betDetails: string) {
   const object = await generateObject({
-    model: google('gemini-1.5-flash', {
-      useSearchGrounding: true
-    }),
+    model: google('gemini-1.5-pro-latest', { useSearchGrounding: true }),
     schema: z.object({
       title: z.string().min(1),
       options: z.array(z.string()).min(2),
       minAmount: z.number().int().positive(),
-      endTime: z.date()
+      endTime: z.string()
     }),
     system:
-      'Extract bet details from the following text. Provide title, options, minimum bet amount, and end time in date format.',
+      'Extract bet details from the following text. Provide title, options (at least 2, search for the options if none detected), minimum bet amount in USDC (look for numbers followed by "usdc" or variations of "bet amount"), and end time. For the title and options, search for current information if available. Handle various time formats in ISO 8601 format including relative times like "24 hours" or "next year"',
     prompt: betDetails
   });
   console.log(object);
@@ -30,10 +29,11 @@ export async function extractBetDetails(betDetails: string) {
 
 export async function classifyCommand(input: string) {
   const { object } = await generateObject({
-    model: google('gemini-1.5-flash', {}),
-    output: 'enum',
-    enum: commands ,
-    system: 'You are a command classifer. You are given a response and you have to classify which command it is based on the response.',
+    model: google('gemini-1.5-flash', { useSearchGrounding: true }),
+    schema: z.object({
+      result: z.string()
+    }),
+    system: `You are predofun_bot, a telegram bot. You are given a message and you have to determine which command it is based on the input. The commands are: ['balance', 'fund', 'bet', 'join', 'vote', 'resolve']. `,
     prompt: input
   });
   return object;

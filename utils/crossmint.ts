@@ -23,7 +23,7 @@ export async function createWallet(email: string) {
 // Wallet locator returned from previous step
 const walletLocator = 'EFeH...';
 
-async function fundWallet() {
+export async function fundWallet(walletLocator: string) {
   const response = await fetch(
     `https://staging.crossmint.com/api/v1-alpha2/wallets/${walletLocator}/balances`,
     {

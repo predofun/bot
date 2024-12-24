@@ -9,20 +9,11 @@ import {
 } from '@solana/spl-token';
 import bs58 from 'bs58';
 
-export function validateRange(range: string[], ctx: Context): boolean {
-  const isNumber = range.every((element) => {
-    const newElement = parseInt(element);
-    return isNaN(newElement) === false;
-  });
-  console.log(isNumber);
-  return isNumber;
-}
 
-
-const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+ const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
 
 // USDC token mint address on Solana
-const USDC_MINT = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
+export const USDC_MINT = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
 
 async function createUSDCTransferTransaction(
   senderAddress: string,

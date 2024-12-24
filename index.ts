@@ -6,8 +6,8 @@ import axios from 'axios';
 import { config } from 'dotenv';
 import { connectDb } from './config/db';
 import { env } from './config/environment';
-import { extractBetDetails } from './utils/gemini';
-import { createWallet, getWalletBalance } from './utils/crossmint';
+import { classifyCommand, extractBetDetails } from './utils/gemini';
+import { createWallet, fundWallet, getWalletBalance } from './utils/crossmint';
 import start from './commands/start';
 import createBet from './commands/create-bet';
 import getBalance from './commands/get-balance';
@@ -23,7 +23,6 @@ export interface MyContext extends Context {
 // Initialize bot and APIs
 const bot = new Telegraf<MyContext>(env.TELEGRAM_BOT_TOKEN!);
 
-
 // Connect to MongoDB
 connectDb();
 
@@ -32,19 +31,24 @@ bot.command('start', async (ctx) => {
   await start(ctx);
 });
 
+// bot.on('text', async (ctx) => {
+//   const command = await classifyCommand(ctx.message.text);
+//   console.log(command);
+// })
+
 // Create Bet Command
-bot.command('create-bet', async (ctx) => {
+bot.command('bet', async (ctx) => {
   await createBet(ctx);
 });
 
 // Balance Command
 bot.command('balance', async (ctx) => {
-await getBalance(ctx)
+  await getBalance(ctx);
 });
 
 // Join Command (in group chat)
 bot.command('join', async (ctx) => {
-  await joinBet(ctx)
+  await joinBet(ctx);
 });
 
 // Vote Command
@@ -83,7 +87,45 @@ bot.command('vote', async (ctx) => {
 
 // Resolve Command
 bot.command('resolve', async (ctx) => {
-  await resolveBet(ctx)
+  await resolveBet(ctx);
+});
+
+bot.on('message', async (ctx) => {
+  // Check if message contains bot mention
+  const botUsername = ctx.botInfo.username;
+  const mentionRegex = new RegExp(`@${botUsername}`);
+  //@ts-ignore
+  const inputText = ctx.update.message?.text;
+
+  if (
+    (mentionRegex.test(inputText) && ctx.chat.type === 'group') ||
+    ctx.chat.type === 'private'
+  ) {
+    // Bot was mentioned, respond to the message
+    //@ts-ignore
+    const input = inputText;
+    if (input) {
+      const { result: command } = await classifyCommand(input);
+      console.log(command);
+      switch (command) {
+        case 'balance':
+          console.log('getting balance')
+          return getBalance(ctx);
+        // case 'fund':
+        //   return fundWallet();
+        case 'bet':
+          console.log('betting')
+          return createBet(ctx);
+        case 'join':
+          return joinBet(ctx);
+        case 'resolve':
+          return resolveBet(ctx);
+        default:
+          console.log('default response')
+          ctx.reply(`${command}`);
+      }
+    }
+  }
 });
 
 // Start the bot
