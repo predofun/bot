@@ -38,11 +38,10 @@ export default async function createBet(ctx) {
     'https://res.cloudinary.com/dbuaprzc0/image/upload/v1735008150/predo/h51lph81n0uhrl1p4vkd.gif',
     'https://res.cloudinary.com/dbuaprzc0/image/upload/v1735006898/predo/obljk4tsuoinqlfz3i56.gif'
   ];
-  const message = await ctx.replyWithPhoto(
-    betImages[Math.floor(Math.random() * betImages.length)],
-    {
-      caption: `Bet created with id: ${bet.betId.toUpperCase()}\nTo join, fund your wallet by starting the bot in private chat`
-    }
+  const message = await ctx.reply(
+    `Bet created with id: ${bet.betId.toUpperCase()}\nGo wager now at: https://predo.fun/bets/${
+      bet.betId
+    }`
   );
   await ctx.pinChatMessage(message.message_id);
 }
