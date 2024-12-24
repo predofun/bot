@@ -16,7 +16,7 @@ export default async function createBet(ctx) {
   const { object: betDetails } = await extractBetDetails(input);
   console.log(betDetails);
   const bet = await Bet.create({
-    betId: `PRE-${Math.random().toString(36).substring(2, 4)}${Math.random()
+    betId: `pre-${Math.random().toString(36).substring(2, 4)}${Math.random()
       .toString(36)
       .substring(2, 5)
       .toLowerCase()}`,
