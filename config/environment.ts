@@ -26,6 +26,8 @@ interface Environment {
   CROSSMINT_API_KEY?: string;
 
   GEMINI_API_KEY?: string;
+
+  AGENT_WALLET?: string;
 }
 
 // Create an object with environment variables
@@ -38,6 +40,7 @@ export const env: Environment = {
   PERPLEXITY_API_KEY: process.env.PERPLEXITY_API_KEY || '',
   CROSSMINT_API_KEY: process.env.CROSSMINT_API_KEY || '',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+  AGENT_WALLET: process.env.AGENT_WALLET || '',
   
 };
 
@@ -50,6 +53,7 @@ export function validateEnvironment() {
     'PERPLEXITY_API_KEY',
     'CROSSMINT_API_KEY',
     'GEMINI_API_KEY',
+    'AGENT_WALLET'
   ];
 
   for (const varName of requiredVars) {

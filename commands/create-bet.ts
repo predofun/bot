@@ -6,6 +6,7 @@ export default async function createBet(ctx) {
     ctx.message.text.split('/bet')[1]?.trim() ||
     ctx.message.text.split(`@predofun_bot`)[1]?.trim() ||
     ctx.message.text.trim();
+  console.log(input, 'input');
   if (!input) {
     ctx.reply(
       'To create a bet, use natural language to describe the bet, including details like the bet amount and end time. For example: "Create a bet on whether it will rain tomorrow, minimum bet 5 USDC, ending in 24 hours"'
@@ -36,10 +37,13 @@ export default async function createBet(ctx) {
     'https://res.cloudinary.com/dbuaprzc0/image/upload/v1735008150/predo/h51lph81n0uhrl1p4vkd.gif',
     'https://res.cloudinary.com/dbuaprzc0/image/upload/v1735006898/predo/obljk4tsuoinqlfz3i56.gif'
   ];
-  const message = await ctx.reply(
-    `Bet created with id: ${bet.betId.toLowerCase()}\nGo wager now at: https://predo.fun/bets/${
-      bet.betId
-    }`
-  )
+  const message = await ctx.replyWithPhoto(
+    betImages[Math.floor(Math.random() * betImages.length)],
+    {
+      caption: `Bet created with id: ${bet.betId.toLowerCase()}\nGo wager now at: https://predo.fun/bets/${
+        bet.betId
+      }`
+    }
+  );
   await ctx.pinChatMessage(message.message_id);
 }

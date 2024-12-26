@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from '@solana/web3.js';
 import UserWallet from '../models/user-wallet.schema';
-import { getWalletBalance } from '../utils/crossmint';
+import { getWalletBalance } from '../utils/wallet-infra';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { USDC_MINT } from '../utils/helper';
 
@@ -19,16 +19,6 @@ export default async function getBalance(ctx) {
     return;
   }
 
-  const balance = await getWalletBalance(wallet.address).catch(async (err) => {
-    if (err.response?.status === 500) {
-      const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
-      return connection.getTokenAccountBalance(
-        await getAssociatedTokenAddress(USDC_MINT, new PublicKey(wallet.address))
-      );
-    }
-    throw err;
-  });
-  console.log(balance);
-  const balanceUsdc = balance[0].balances.solana;
-  ctx.reply(`Your balance is: ${balanceUsdc / 1e6} USDC`);
+  const balance = await getWalletBalance(wallet.address);
+  ctx.reply(`Your balance is: ${balance} USDC`);
 }

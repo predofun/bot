@@ -7,7 +7,7 @@ import { config } from 'dotenv';
 import { connectDb } from './config/db';
 import { env } from './config/environment';
 import { classifyCommand, extractBetDetails } from './utils/gemini';
-import { createWallet, fundWallet, getWalletBalance } from './utils/crossmint';
+import { createWallet, fundWallet, getWalletBalance } from './utils/wallet-infra';
 import start from './commands/start';
 import createBet from './commands/create-bet';
 import getBalance from './commands/get-balance';
@@ -122,17 +122,22 @@ bot.on('message', async (ctx) => {
 });
 
 // Start the bot
-bot
-  .launch({
-    webhook: {
-      domain: 'https://predo-bot-production.up.railway.app',
-      port: 8000
-    }
-  })
-  .then(async () => {
-    await connectDb();
-    console.info(`The bot ${bot.botInfo.username} is running on server`);
-  });
+// bot
+//   .launch({
+//     webhook: {
+//       domain: 'https://predo-bot-production.up.railway.app',
+//       port: 8000
+//     }
+//   })
+//   .then(async () => {
+//     await connectDb();
+//     console.info(`The bot ${bot.botInfo.username} is running on server`);
+//   });
+
+bot.launch().then(async () => {
+  await connectDb();
+  console.info(`The bot ${bot.botInfo.username} is running on server`);
+});
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));

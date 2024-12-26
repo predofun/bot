@@ -1,5 +1,15 @@
 import { Context } from 'telegraf';
-import { TransactionMessage, PublicKey, VersionedTransaction, Connection } from '@solana/web3.js';
+import {
+  TransactionMessage,
+  PublicKey,
+  VersionedTransaction,
+  Connection,
+  Keypair,
+  Transaction,
+  SystemProgram,
+  sendAndConfirmTransaction,
+  LAMPORTS_PER_SOL
+} from '@solana/web3.js';
 import {
   createTransferInstruction,
   getAssociatedTokenAddress,
@@ -9,8 +19,7 @@ import {
 } from '@solana/spl-token';
 import bs58 from 'bs58';
 
-
- const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
 
 // USDC token mint address on Solana
 export const USDC_MINT = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
@@ -74,5 +83,17 @@ async function createUSDCTransferTransaction(
   return bs58.encode(transaction.serialize());
 }
 
+export async function transfer(privateKeyFrom: string, publicKey: PublicKey) {
+  const fromKeypair = Keypair.fromSecretKey(Buffer.from(privateKeyFrom, 'base64'));
+
+  const transaction = new Transaction().add(
+    SystemProgram.transfer({
+      fromPubkey: fromKeypair.publicKey,
+      toPubkey: publicKey,
+      lamports: LAMPORTS_PER_SOL * 0.1
+    })
+  );
+  await sendAndConfirmTransaction(connection, transaction, [fromKeypair]);
+}
 
 export const commands = ['balance', 'fund', 'create-bet', 'join', 'vote', 'resolve'];

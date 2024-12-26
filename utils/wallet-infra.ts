@@ -1,27 +1,36 @@
 import { config } from 'dotenv';
 import { env } from '../config/environment';
+import {
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  sendAndConfirmTransaction,
+  SystemProgram,
+  Transaction
+} from '@solana/web3.js';
+import { transfer } from './helper';
 
 config();
 const apiKey = env.CROSSMINT_API_KEY;
+const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+export const SOL_TO_USDC = 181 / LAMPORTS_PER_SOL;
+export async function createWallet() {
+  // Generate a new keypair
+  const keypair = Keypair.generate();
 
-export async function createWallet(email: string) {
-  const response = await fetch('https://staging.crossmint.com/api/v1-alpha2/wallets', {
-    method: 'POST',
-    headers: {
-      'X-API-KEY': apiKey!,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      type: 'solana-custodial-wallet',
-      linkedUser: `email:${email.toLowerCase()}@gmail.com`
-    })
-  });
+  // Extract the private key (secret key)
+  const privateKey = keypair.secretKey;
+  const transferTestSOL = await transfer(env.AGENT_WALLET, keypair.publicKey);
+  const balance = (await connection.getBalance(keypair.publicKey)) * SOL_TO_USDC;
+  console.log(balance);
 
-  return await response.json();
+  return {
+    address: keypair.publicKey.toBase58(),
+    privateKey: Buffer.from(privateKey).toString('base64'),
+    balance
+  };
 }
-
-// Wallet locator returned from previous step
-const walletLocator = 'EFeH...';
 
 export async function fundWallet(walletLocator: string) {
   const response = await fetch(
@@ -41,23 +50,12 @@ export async function fundWallet(walletLocator: string) {
 
   return await response.json();
 }
-// Crossmint's API key
-
-// Wallet locator returned from previous step
 
 export async function getWalletBalance(walletLocator: string) {
-  const response = await fetch(
-    `https://staging.crossmint.com/api/v1-alpha2/wallets/${walletLocator}/balances?currencies=usdc`,
-    {
-      method: 'GET',
-      headers: {
-        'X-API-KEY': apiKey!,
-        'Content-Type': 'application/json'
-      }
-    }
-  );
-
-  return await response.json();
+  const balance = await connection.getBalance(new PublicKey(walletLocator));
+  if (!balance) return 0;
+  const balanceUsdc = balance * SOL_TO_USDC;
+  return balanceUsdc.toFixed(2);
 }
 
 export async function createTransaction(walletLocator: string) {
