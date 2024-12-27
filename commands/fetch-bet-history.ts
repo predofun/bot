@@ -12,7 +12,7 @@ export default async function getHistory(ctx: any) {
   }
   let newWallet = await createWallet();
   let wallet = await UserWallet.findOne({ username });
-  const betHistory = await Bet.find({ participants: username });
+  const betHistory = await Bet.find({ participants: wallet._id });
 
   if (betHistory.length > 0) {
     const betHistoryString = betHistory
