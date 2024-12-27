@@ -38,3 +38,18 @@ export async function classifyCommand(input: string) {
   });
   return object;
 }
+
+
+export async function resolveBet(bet: { title: string, options: string[], votes: Record<string, number> }) {
+  const { object } = await generateObject({
+    model: google('gemini-1.5-pro-latest', { useSearchGrounding: true }),
+    schema: z.object({
+      result: z.number()
+    }),
+    system: `Verify the outcome of this bet: ${bet.title}`,
+    prompt: `Please verify the outcome of this bet. The options are: \n\n${bet.options.join('\n')}\n\nThe votes are: \n\n${Object.entries(bet.votes).map(([option, count]) => `${option}: ${count}`).join('\n')}\n\nPlease provide the index of the correct option (starts at 0) in the list above.`
+  });
+  const correctOption = object.result;
+  return correctOption;
+}
+

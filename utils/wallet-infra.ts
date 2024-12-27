@@ -32,25 +32,6 @@ export async function createWallet() {
   };
 }
 
-export async function fundWallet(walletLocator: string) {
-  const response = await fetch(
-    `https://staging.crossmint.com/api/v1-alpha2/wallets/${walletLocator}/balances`,
-    {
-      method: 'POST',
-      headers: {
-        'X-API-KEY': apiKey!,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        amount: 5,
-        currency: 'usdc'
-      })
-    }
-  );
-
-  return await response.json();
-}
-
 export async function getWalletBalance(walletLocator: string) {
   const balance = await connection.getBalance(new PublicKey(walletLocator));
   if (!balance) return 0;
@@ -58,23 +39,4 @@ export async function getWalletBalance(walletLocator: string) {
   return balanceUsdc.toFixed(2);
 }
 
-export async function createTransaction(walletLocator: string) {
-  const response = await fetch(
-    `https://staging.crossmint.com/api/v1-alpha2/wallets/${walletLocator}/transactions`,
-    {
-      method: 'POST',
-      headers: {
-        'X-API-KEY': apiKey!,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        params: {
-          // Base58 encoded transaction returned from previous step
-          transaction: '3T4D...'
-        }
-      })
-    }
-  );
 
-  return await response.json();
-}

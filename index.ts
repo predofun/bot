@@ -7,7 +7,7 @@ import { config } from 'dotenv';
 import { connectDb } from './config/db';
 import { env } from './config/environment';
 import { classifyCommand, extractBetDetails } from './utils/gemini';
-import { createWallet, fundWallet, getWalletBalance } from './utils/wallet-infra';
+import { createWallet, getWalletBalance } from './utils/wallet-infra';
 import start from './commands/start';
 import createBet from './commands/create-bet';
 import getBalance from './commands/get-balance';

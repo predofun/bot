@@ -40,7 +40,7 @@ export default async function createBet(ctx) {
   const message = await ctx.replyWithPhoto(
     betImages[Math.floor(Math.random() * betImages.length)],
     {
-      caption: `Bet created with id: ${bet.betId.toLowerCase()}\nGo wager now at: https://predo.fun/bets/${
+      caption: `Bet created with id: ${bet.betId.toLowerCase()}\nGo wager now at: https://t.me/predofun_bot/predofun?startapp=${
         bet.betId
       }`
     }
