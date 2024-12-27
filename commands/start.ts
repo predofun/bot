@@ -1,4 +1,4 @@
-import { createWallet, fundWallet } from '../utils/wallet-infra';
+import { createWallet } from '../utils/wallet-infra';
 import UserWallet from '../models/user-wallet.schema';
 export default async function start(ctx: any) {
   if (ctx.chat.type !== 'private') return;
@@ -18,11 +18,12 @@ export default async function start(ctx: any) {
     },
     { upsert: true, new: true }
   );
-  if (!wallet.address) {
-    await fundWallet(wallet.address);
-  }
 
   ctx.reply(
-    `Your wallet address is: ${wallet.address}.\nYou have been rewarded with ${newWallet.balance.toFixed(2)} USDC to start with your first bet.`
+    `Your wallet address is: ${
+      wallet.address
+    }.\nYou have been rewarded with ${newWallet.balance.toFixed(
+      2
+    )} USDC to start with your first bet.`
   );
 }
