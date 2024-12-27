@@ -38,10 +38,15 @@ export default async function createBet(ctx) {
     endTime: new Date(betDetails.endTime)
   });
   console.log(bet);
-  const message = await ctx.replyWithPhoto(bet.image, {
-    caption: `Bet created with id: ${bet.betId.toLowerCase()}\nGo wager now at: https://t.me/predofun_bot/predofun?startapp=${
-      bet.betId
-    }`
-  });
+  // const message = await ctx.replyWithPhoto(bet.image, {
+  //   caption: `Bet created with id: ${bet.betId.toLowerCase()}\nGo wager now at: https://t.me/predofun_bot/predofun?startapp=${
+  //     bet.betId
+  //   }`
+    // });  
+    const message = await ctx.replyWithPhoto(bet.image, {
+      caption: `Bet created with id: ${bet.betId.toLowerCase()}\nGo wager now at: https://t.me/chucks1093bot/chucks1093?startapp=${
+        bet.betId
+      }`
+    });
   await ctx.pinChatMessage(message.message_id);
 }
