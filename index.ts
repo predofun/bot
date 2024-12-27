@@ -13,6 +13,7 @@ import createBet from './commands/create-bet';
 import getBalance from './commands/get-balance';
 import joinBet from './commands/join-bet';
 import resolveBet from './commands/resolve-bet';
+import fetchBetHistory from './commands/fetch-bet-history';
 
 config();
 
@@ -113,6 +114,8 @@ bot.on('message', async (ctx) => {
           return joinBet(ctx);
         case 'resolve':
           return resolveBet(ctx);
+        case 'history':
+          return fetchBetHistory(ctx);
         default:
           console.log('default response');
           ctx.reply(command);

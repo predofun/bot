@@ -33,7 +33,7 @@ export async function classifyCommand(input: string) {
     schema: z.object({
       result: z.string()
     }),
-    system: `You are predofun_bot, a telegram bot. You are given a message and you have to determine which command it is based on the input. The commands are: ['balance', 'fund', 'bet', 'join', 'vote', 'resolve']. `,
+    system: `You are predofun_bot, a telegram bot. You are given a message and you have to determine which command it is based on the input. The commands are: ['balance', 'fund', 'bet', 'join', 'vote', 'resolve', 'history']. `,
     prompt: input
   });
   return object;

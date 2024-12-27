@@ -1,5 +1,6 @@
 import { createWallet } from '../utils/wallet-infra';
 import UserWallet from '../models/user-wallet.schema';
+
 export default async function start(ctx: any) {
   if (ctx.chat.type !== 'private') return;
 
