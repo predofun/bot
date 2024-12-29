@@ -2,6 +2,7 @@ import { extractBetDetails } from '../utils/gemini';
 import Bet from '../models/bet.schema';
 
 export default async function createBet(ctx) {
+
   const input =
     ctx.message.text.split('/bet')[1]?.trim() ||
     ctx.message.text.split(`@predofun_bot`)[1]?.trim() ||
@@ -12,6 +13,11 @@ export default async function createBet(ctx) {
     );
     return;
   }
+  if (ctx.chat.type === 'private') {
+    ctx.reply('You cannot create a bet in a private chat. Please try again in a group chat.');
+    return;
+  }
+
 
   const { object: betDetails } = await extractBetDetails(input);
   console.log(betDetails);

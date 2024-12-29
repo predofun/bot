@@ -32,11 +32,6 @@ bot.command('start', async (ctx) => {
   await start(ctx);
 });
 
-// bot.on('text', async (ctx) => {
-//   const command = await classifyCommand(ctx.message.text);
-//   console.log(command);
-// })
-
 // Create Bet Command
 bot.command('bet', async (ctx) => {
   await createBet(ctx);
@@ -97,7 +92,7 @@ bot.on('message', async (ctx) => {
   const mentionRegex = new RegExp(`@${botUsername}`);
   //@ts-ignore
   const inputText = ctx.update.message?.text;
-
+  if (inputText.startsWith('/')) return;
   if (ctx.chat.type === 'private' || (mentionRegex.test(inputText) && ctx.chat.type === 'group')) {
     console.log(ctx.update);
     const input = inputText?.replace(mentionRegex, '').trim();
