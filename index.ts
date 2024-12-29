@@ -99,6 +99,7 @@ bot.on('message', async (ctx) => {
   const inputText = ctx.update.message?.text;
 
   if (ctx.chat.type === 'private' || (mentionRegex.test(inputText) && ctx.chat.type === 'group')) {
+    console.log(ctx.update);
     const input = inputText?.replace(mentionRegex, '').trim();
     if (input) {
       const { result: command } = await classifyCommand(input);
@@ -113,7 +114,17 @@ bot.on('message', async (ctx) => {
         case 'join':
           return joinBet(ctx);
         case 'resolve':
-          return resolveBet(ctx);
+          if (
+            //@ts-ignore
+            ctx.message.reply_to_message &&
+            //@ts-ignore
+            ctx.message.reply_to_message.from?.username === bot.botInfo?.username &&
+            //@ts-ignore
+            ctx.message.reply_to_message.chat.type === 'group'
+          ) {
+            // This is a reply to the bot's message
+            return resolveBet(ctx);
+          }
         case 'history':
           return fetchBetHistory(ctx);
         default:
@@ -125,22 +136,22 @@ bot.on('message', async (ctx) => {
 });
 
 // Start the bot
-bot
-  .launch({
-    webhook: {
-      domain: 'https://predo.up.railway.app',
-      port: 8000
-    }
-  })
-  .then(async () => {
-    await connectDb();
-    console.info(`The bot ${bot.botInfo.username} is running on server`);
-  });
+// bot
+//   .launch({
+//     webhook: {
+//       domain: 'https://predo.up.railway.app',
+//       port: 8000
+//     }
+//   })
+//   .then(async () => {
+//     await connectDb();
+//     console.info(`The bot ${bot.botInfo.username} is running on server`);
+//   });
 
-// bot.launch().then(async () => {
-//   await connectDb();
-//   console.info(`The bot ${bot.botInfo.username} is running on server`);
-// });
+bot.launch().then(async () => {
+  await connectDb();
+  console.info(`The bot ${bot.botInfo.username} is running on server`);
+});
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));

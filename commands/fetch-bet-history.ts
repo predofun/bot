@@ -10,22 +10,38 @@ export default async function getHistory(ctx: any) {
     ctx.reply('Please set a username in Telegram to use this bot.');
     return;
   }
-  let newWallet = await createWallet();
   let wallet = await UserWallet.findOne({ username });
   const betHistory = await Bet.find({ participants: wallet._id });
 
   if (betHistory.length > 0) {
     const betHistoryString = betHistory
       .map((bet) => {
-        return `**Bet ID:** ${bet.betId}\n**Title:** ${bet.title}\n**Options:** ${bet.options.join(
-          ', '
-        )}\n**Min Amount:** ${bet.minAmount} USDC\n**End Time:** ${bet.endTime.toLocaleString()}\n\n`;
+        return (
+          `🎲 *Bet Details*\n` +
+          `└ ID: \`${bet.betId}\`\n` +
+          `📌 *Title*: ${bet.title}\n` +
+          `🎯 *Options*: ${bet.options.join(' | ')}\n` +
+          `💰 *Min Amount*: ${bet.minAmount} USDC\n` +
+          `⏰ *End Time*: ${bet.endTime.toLocaleString()}\n` +
+          `───────────────\n`
+        );
       })
       .join('');
+
+    // Format the reply message
     ctx.reply(
-      `Hey, ${username}! \nHere is your bet history:\n\n${betHistoryString}\nKeep on betting, and may the odds be ever in your favor!`
+      `🎮 *Welcome ${username}!*\n\n` +
+        `📊 *Your Betting History*\n\n` +
+        `${betHistoryString}\n` +
+        `🍀 _Keep betting, and may the odds be ever in your favor!_`,
+      { parse_mode: 'Markdown' }
     );
   } else {
-    ctx.reply('You have not joined any bets yet.');
+    ctx.reply(
+      `❌ *No Betting History*\n\n` +
+        `_You haven't joined any bets yet._\n` +
+        `Start betting now to build your history!`,
+      { parse_mode: 'Markdown' }
+    );
   }
 }

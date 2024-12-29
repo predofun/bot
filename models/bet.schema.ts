@@ -10,7 +10,7 @@ interface IBet extends Document {
   participants: string[];
   votes: Record<string, number>;
   image: string;
-
+  chatId: string
   resolved: boolean;
 }
 
@@ -24,6 +24,7 @@ const BetSchema: Schema = new Schema({
   participants: { type: [mongoose.Schema.Types.ObjectId], default: [] },
   votes: { type: Map, of: Number, default: {} },
   image: { type: String },
+  chatId: { type: String, required: true },
   resolved: { type: Boolean, default: false }
 });
 
