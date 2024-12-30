@@ -16,7 +16,7 @@ import resolveBet from './commands/resolve-bet';
 import fetchBetHistory from './commands/fetch-bet-history';
 
 config();
-
+connectDb();
 export interface MyContext extends Context {
   scene: Scenes.SceneContextScene<MyContext>;
 }
@@ -153,7 +153,7 @@ bot
     }
   })
   .then(async () => {
-    await connectDb();
+    // await connectDb();
     console.info(`The bot ${bot.botInfo.username} is running on server`);
   });
 
