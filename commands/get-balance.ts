@@ -7,18 +7,46 @@ export default async function getBalance(ctx) {
 
     const username = ctx.from?.username;
     if (!username) {
-      ctx.reply('Please set a username in Telegram to use this bot.');
+      ctx.reply(
+        `🚫 Bet Wallet Blocked! 🤖\n\n` +
+          `Oops! You need a Telegram username to access your bot funds. \n` +
+          `Set up your username and get ready to bet! 🎲`
+      );
       return;
     }
 
     const wallet = await UserWallet.findOne({ username });
     if (!wallet) {
-      ctx.reply("You don't have a wallet yet. Use /start to create one.");
+      ctx.reply(
+        `💼 Wallet Missing in Action! 🕳️\n\n` +
+          `Looks like you haven't started your bet journey. \n` +
+          `Use /start to create your bet powerhouse! 🚀`
+      );
       return;
     }
 
-    const balance = await getWalletBalance(wallet.address);
-    ctx.reply(`Your wallet address is: ${wallet.address}\n` + `Your balance is: *${balance} USDC*`);
+    const balance = await parseInt((await getWalletBalance(wallet.address)) as string);
+
+    // Fun balance messages with different tones based on balance
+    const balanceMessages = [
+      balance === 0
+        ? `🏜️ Wallet Tumbleweeds! Looks like your bet funds are on vacation. Time to /fund! 💸`
+        : balance < 10
+        ? `🌱 Small but mighty! Your bet seed is growing. Keep betting! 💪`
+        : balance < 50
+        ? `🚀 Bet Fuel Building Up! You're ready for some serious wagering! 🎲`
+        : `🏆 Bet Champion Wallet Alert! 💰 You're armed and dangerous! 🔥`
+    ];
+
+    ctx.reply(
+      `💼 *Bet Wallet Status* 🎯\n\n` +
+        `🔑 Address: \`${wallet.address}\`\n` +
+        `💰 Balance: *${balance} USDC*\n\n` +
+        `${balanceMessages[0]}`,
+      {
+        parse_mode: 'Markdown'
+      }
+    );
   } catch (error) {
     console.log(error);
     console.log('ok');

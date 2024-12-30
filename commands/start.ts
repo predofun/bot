@@ -6,9 +6,24 @@ export default async function start(ctx: any) {
 
   const username = ctx.from?.username;
   if (!username) {
-    ctx.reply('Please set a username in Telegram to use this bot.');
+    ctx.reply(
+      `🚫 Prediction Portal Blocked! 🤖\n\n` +
+      `Oops! You need a Telegram username to enter the prediction realm. \n` +
+      `Set up your username and prepare to challenge fate! 🎲`
+    );
     return;
   }
+
+  const existingWallet = await UserWallet.findOne({ username });
+  if (existingWallet) {
+    ctx.reply(
+      `🙅‍♂️ You've already started your prediction journey! 🚀\n\n` +
+      `Your wallet is ready, and your fate is waiting. \n` +
+      `Use /bet to create your first prediction challenge!`
+    );
+    return;
+  }
+
   let newWallet = await createWallet();
   let wallet = await UserWallet.findOneAndUpdate(
     { username },
@@ -21,10 +36,12 @@ export default async function start(ctx: any) {
   );
 
   ctx.reply(
-    `Your wallet address is: ${
-      wallet.address
-    }.\nYou have been rewarded with ${newWallet.balance.toFixed(
-      2
-    )} USDC to start with your first bet.`
+    `🎉 Welcome to the Prediction Arena! 🚀\n\n` +
+    `Your prediction journey begins now, ${username}! 🌟\n\n` +
+    `🔑 Wallet Created:\n` +
+    `└ Address: \`${wallet.address}\`\n\n` +
+    `💰 Starter Bonus: ${newWallet.balance.toFixed(2)} USDC\n` +
+    `Your first step into the world of predictive excitement! 🎲\n\n` +
+    `💡 Pro Tip: Use /bet to create your first prediction challenge!`
   );
 }

@@ -4,7 +4,6 @@ import { generateObject, generateText } from 'ai';
 import { z } from 'zod';
 import { env } from '../config/environment';
 import { commands } from './helper';
-import perplexity from './perplexity';
 import { DateTime } from 'luxon';
 
 const google = createGoogleGenerativeAI({
@@ -13,7 +12,7 @@ const google = createGoogleGenerativeAI({
 
 export async function extractBetDetails(betDetails: string) {
   const object = await generateObject({
-    model: google('gemini-1.5-pro', {
+    model: google('gemini-2.0-flash-exp', {
       useSearchGrounding: true,
       structuredOutputs: false // This is correct for handling schema limitations
     }),
@@ -62,6 +61,54 @@ export async function resolveBetWithAI(bet: {
   });
   const correctOption = object;
   return correctOption;
+}
+
+export async function getPredoGameInfo(query: string) {
+  // Predefined responses for common queries
+  const predefinedResponses = {
+    'how to play': `🎲 Predo Game Guide 🚀
+1️⃣ Make a bold claim
+2️⃣ Tag @PredoBot 
+3️⃣ AI creates wager
+4️⃣ Friends join stakes
+5️⃣ AI verifies 
+6️⃣ Winners paid 💰`,
+
+    'commands': `🤖 Commands:
+/balance /fund 
+/bet /join 
+/vote /resolve`,
+
+    'what is predo': `🔮 Predo.fun: 
+Predict & win with friends! 
+S'take USD'C, AI decides.`
+  };
+
+  // Check for predefined responses first
+  const lowerQuery = query.toLowerCase();
+  for (const [key, response] of Object.entries(predefinedResponses)) {
+    if (lowerQuery.includes(key)) {
+      return response;
+    }
+  }
+
+  // If no predefined response, use Gemini for an ultra-concise answer
+  const { text } = await generateText({
+    model: google('gemini-2.0-flash-exp', { useSearchGrounding: true }),
+    system: `Explain in ONE very short sentence: What is prediction betting?`,
+    prompt: query
+  });
+
+  // Craft a playful, ultra-concise response
+  const predoPersonality = [
+    '🎲 Prediction Mode! 🚀',
+    '🔮 Bet & Win! 💥',
+    '🏆 Predict Champion! 🌟'
+  ];
+
+  const randomIntro = predoPersonality[Math.floor(Math.random() * predoPersonality.length)];
+
+  return `${randomIntro}\n\n${text.slice(0, 100)}...`;
 }
 
 export function getCurrentTime(): string {

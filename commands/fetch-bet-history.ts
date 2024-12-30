@@ -7,9 +7,14 @@ export default async function getHistory(ctx: any) {
 
   const username = ctx.from?.username;
   if (!username) {
-    ctx.reply('Please set a username in Telegram to use this bot.');
+    ctx.reply(
+      `🚫 Prediction Archives Locked! 🔒\n\n` +
+      `Oops! You need a Telegram username to access your prediction history. \n` +
+      `Set up your username and unlock your legendary predictions! 🏆`
+    );
     return;
   }
+  
   let wallet = await UserWallet.findOne({ username });
   const betHistory = await Bet.find({ participants: wallet._id });
 
@@ -17,30 +22,32 @@ export default async function getHistory(ctx: any) {
     const betHistoryString = betHistory
       .map((bet) => {
         return (
-          `🎲 *Bet Details*\n` +
+          `🎲 *Prediction Chronicle*\n` +
           `└ ID: \`${bet.betId}\`\n` +
           `📌 *Title*: ${bet.title}\n` +
           `🎯 *Options*: ${bet.options.join(' | ')}\n` +
-          `💰 *Min Amount*: ${bet.minAmount} USDC\n` +
-          `⏰ *End Time*: ${bet.endTime.toLocaleString()}\n` +
+          `💰 *Stake*: ${bet.minAmount} USDC\n` +
+          `⏰ *Ended*: ${bet.endTime.toLocaleString()}\n` +
           `───────────────\n`
         );
       })
       .join('');
 
-    // Format the reply message
     ctx.reply(
-      `🎮 *Welcome ${username}!*\n\n` +
-        `📊 *Your Betting History*\n\n` +
-        `${betHistoryString}\n` +
-        `🍀 _Keep betting, and may the odds be ever in your favor!_`,
+      `🏆 *Prediction Hall of Fame* 🌟\n\n` +
+      `Welcome, ${username}, prediction master! 🎉\n\n` +
+      `📊 *Your Legendary Betting Journey*\n\n` +
+      `${betHistoryString}\n` +
+      `🔮 *Total Bets*: ${betHistory.length}\n\n` +
+      `💡 Keep challenging fate, and may your predictions be ever in your favor! 🎲`,
       { parse_mode: 'Markdown' }
     );
   } else {
     ctx.reply(
-      `❌ *No Betting History*\n\n` +
-        `_You haven't joined any bets yet._\n` +
-        `Start betting now to build your history!`,
+      `🕳️ *Empty Prediction Archives* 📜\n\n` +
+      `Looks like you haven't started your prediction journey yet! \n` +
+      `Create your first bet and write your legend! 🚀\n\n` +
+      `💡 Use /bet to start predicting and make history!`,
       { parse_mode: 'Markdown' }
     );
   }

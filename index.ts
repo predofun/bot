@@ -6,7 +6,7 @@ import axios from 'axios';
 import { config } from 'dotenv';
 import { connectDb } from './config/db';
 import { env } from './config/environment';
-import { classifyCommand, extractBetDetails } from './utils/gemini';
+import { classifyCommand, extractBetDetails, getPredoGameInfo } from './utils/gemini';
 import { createWallet, getWalletBalance } from './utils/wallet-infra';
 import start from './commands/start';
 import createBet from './commands/create-bet';
@@ -136,28 +136,28 @@ bot.on('message', async (ctx) => {
           return fetchBetHistory(ctx);
         default:
           console.log('default response');
-          ctx.reply(command);
+          const gameInfo = await getPredoGameInfo(input);
+          ctx.reply(gameInfo);
       }
     }
   }
 });
 
-// bot
-//   .launch({
-//     webhook: {
-//       domain: 'https://predo.up.railway.app',
-//       port: 8000
-//     }
-//   })
-//   .then(async () => {
-//     // await connectDb();
-//     console.info(`The bot ${bot.botInfo.username} is running on server`);
-//   });
+bot.launch({
+    webhook: {
+      domain: 'https://predo.up.railway.app',
+      port: 8000
+    }
+  })
+  .then(async () => {
+    // await connectDb();
+    console.info(`The bot ${bot.botInfo.username} is running on server`);
+  });
 
-bot.launch().then(async () => {
-  // await connectDb();
-  console.info(`The bot ${bot.botInfo.username} is running on server`);
-});
+// bot.launch().then(async () => {
+//   // await connectDb();
+//   console.info(`The bot ${bot.botInfo.username} is running on server`);
+// });
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));

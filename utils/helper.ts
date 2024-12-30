@@ -96,4 +96,4 @@ export async function transfer(privateKeyFrom: string, publicKey: PublicKey) {
   await sendAndConfirmTransaction(connection, transaction, [fromKeypair]);
 }
 
-export const commands = ['balance', 'fund', 'create-bet', 'join', 'vote', 'resolve'];
+export const commands = ['balance', 'fund', 'bet', 'join', 'vote', 'resolve'];
