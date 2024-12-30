@@ -42,7 +42,7 @@ export async function classifyCommand(input: string) {
   return object;
 }
 
-export async function resolveBet(bet: {
+export async function resolveBetWithAI(bet: {
   title: string;
   options: string[];
   votes: Record<string, number>;
@@ -54,15 +54,13 @@ export async function resolveBet(bet: {
       reason: z.string()
     }),
     system: `You are a knowledgable bet outcome verifier, you are given a bet and the options and you choose the correct answer and give a reason why it's the answer`,
-    prompt: `Please verify the outcome of this bet. Search online for more information. Give reason why it's the correct answer. The bet is about: \n\n${bet.title}\n\n The options are: \n\n${bet.options.join(
+    prompt: `Please verify the outcome of this bet. Search online for more information. Give reason why it's the correct answer and also provide teh date the correct answer happened if possible.Always know that people don't make bet about the past,so if the reason why an answer is correct is before the current date ${getCurrentTime()} then it's not the correct answer. The bet is about: \n\n${
+      bet.title
+    }\n\n The options are: \n\n${bet.options.join(
       '\n'
-    )}\n\nThe votes are: \n\n${Object.entries(bet.votes)
-      .map(([option, count]) => `${option}: ${count}`)
-      .join(
-        '\n'
-      )}\n\nPlease provide the index of the correct option (starts at 0) in the list above.`
+    )}\n\nPlease provide the index of the correct option (starts at 0) in the list above.`
   });
-  const correctOption = object.result;
+  const correctOption = object;
   return correctOption;
 }
 

@@ -1,4 +1,4 @@
-import { Telegraf, Scenes, session, Context } from 'telegraf';
+import { Telegraf, Scenes, session, Context, TelegramError } from 'telegraf';
 import { Connection, PublicKey } from '@solana/web3.js';
 import Bet from './models/bet.schema';
 import UserWallet from './models/user-wallet.schema';
@@ -25,12 +25,9 @@ export interface MyContext extends Context {
 const bot = new Telegraf<MyContext>(env.TELEGRAM_BOT_TOKEN!);
 
 bot.catch((err, ctx) => {
-  console.error('Bot error:', err);
-  //@ts-expect-error
-  if (err.response.description?.includes('bot was blocked by the user')) {
-    // Log blocked user
-    console.log(`User ${ctx.from?.id} has blocked the bot`);
-    return;
+  if (err instanceof TelegramError && err.response.error_code === 403) {
+    console.error('User blocked the bot:', err);
+    // Remove user from database or take other necessary action
   }
 });
 
@@ -145,22 +142,29 @@ bot.on('message', async (ctx) => {
   }
 });
 
-bot
-  .launch({
-    webhook: {
-      domain: 'https://predo.up.railway.app',
-      port: 8000
-    }
-  })
-  .then(async () => {
-    // await connectDb();
-    console.info(`The bot ${bot.botInfo.username} is running on server`);
-  });
+// bot
+//   .launch({
+//     webhook: {
+//       domain: 'https://predo.up.railway.app',
+//       port: 8000
+//     }
+//   })
+//   .then(async () => {
+//     // await connectDb();
+//     console.info(`The bot ${bot.botInfo.username} is running on server`);
+//   });
 
-// bot.launch().then(async () => {
-//   await connectDb();
-//   console.info(`The bot ${bot.botInfo.username} is running on server`);
-// });
+bot.launch().then(async () => {
+  // await connectDb();
+  console.info(`The bot ${bot.botInfo.username} is running on server`);
+});
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+process.on('unhandledRejection', (err) => {
+  if (err instanceof TelegramError && err.response.error_code === 403) {
+    console.error('User blocked the bot:', err);
+    // Remove user from database or take other necessary action
+  }
+});

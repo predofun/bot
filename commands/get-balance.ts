@@ -20,7 +20,7 @@ export default async function getBalance(ctx) {
     const balance = await getWalletBalance(wallet.address);
     ctx.reply(`Your wallet address is: ${wallet.address}\n` + `Your balance is: *${balance} USDC*`);
   } catch (error) {
-    console.log(error)
-    console.log('ok')
+    console.log(error);
+    console.log('ok');
   }
 }

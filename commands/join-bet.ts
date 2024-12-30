@@ -1,7 +1,7 @@
-import { Connection, PublicKey } from "@solana/web3.js";
-import UserWallet from "../models/user-wallet.schema";
-import Bet from "../models/bet.schema";
-import { env } from "../config/environment";
+import { Connection, PublicKey } from '@solana/web3.js';
+import UserWallet from '../models/user-wallet.schema';
+import Bet from '../models/bet.schema';
+import { env } from '../config/environment';
 
 const solanaConnection = new Connection(env.SOLANA_RPC_ENDPOINT!);
 

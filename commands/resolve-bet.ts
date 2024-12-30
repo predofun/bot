@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Bet from '../models/bet.schema';
+import { resolveBetWithAI } from '../utils/gemini';
 
 function extractBetIdFromText(text: string) {
   const regex = /Bet created with id: (pre-\w+)/;
@@ -22,6 +23,7 @@ export default async function resolveBet(ctx: any) {
   }
 
   const bet = await Bet.findOne({ chatId: repliedToMessageId });
+  console.log(bet);
   if (!bet) {
     ctx.reply('Invalid bet ID.');
     return;
@@ -32,14 +34,8 @@ export default async function resolveBet(ctx: any) {
     return;
   }
 
-  // Use Perplexity API to verify the outcome
-
-  // const correctOption = parseInt(perplexityResponse.data.choices[0].message.content);
-  // if (isNaN(correctOption) || correctOption < 0 || correctOption >= bet.options.length) {
-  //   ctx.reply('Failed to verify the bet outcome. Please try again later.');
-  //   return;
-  // }
-
+  const resolved = await resolveBetWithAI(bet);
+  console.log(resolved);
   const winners = [];
   const prizePool = bet.minAmount * bet.participants.length;
   const winnerPayout = prizePool / winners.length;
@@ -56,13 +52,13 @@ export default async function resolveBet(ctx: any) {
   //     }
   //   }
 
-  bet.resolved = true;
-  await bet.save();
-  const correctOption = true;
-  // ctx.reply(
-  //   `Bet resolved. The correct option was: ${bet.options[correctOption]}\nWinners: ${winners.join(
-  //     ', '
-  //   )}\nEach winner receives: ${winnerPayout} USDC`
-  // );
-  ctx.reply('chicken');
+  // bet.resolved = true;
+  // await bet.save();
+  const correctOption = resolved.result;
+  ctx.reply(
+    `Bet resolved. The correct option was: ${bet.options[correctOption]}\nWinners: ${winners.join(
+      ', '
+    )}\nEach winner receives: ${winnerPayout} USDC,`
+  );
+  ctx.reply(`This is the reason for the answer: ${resolved.reason}`);
 }
