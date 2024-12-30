@@ -21,7 +21,6 @@ export interface MyContext extends Context {
   scene: Scenes.SceneContextScene<MyContext>;
 }
 
-
 // Initialize bot and APIs
 const bot = new Telegraf<MyContext>(env.TELEGRAM_BOT_TOKEN!);
 
@@ -146,21 +145,22 @@ bot.on('message', async (ctx) => {
   }
 });
 
-  // bot.launch({
-  //   webhook: {
-  //     domain: 'https://predo.up.railway.app',
-  //     port: 8000
-  //   }
-  // })
-  // .then(async () => {
-  //   await connectDb();
-  //   console.info(`The bot ${bot.botInfo.username} is running on server`);
-  // });
+bot
+  .launch({
+    webhook: {
+      domain: 'https://predo.up.railway.app',
+      port: 8000
+    }
+  })
+  .then(async () => {
+    await connectDb();
+    console.info(`The bot ${bot.botInfo.username} is running on server`);
+  });
 
-bot.launch().then(async () => {
-  await connectDb();
-  console.info(`The bot ${bot.botInfo.username} is running on server`);
-});
+// bot.launch().then(async () => {
+//   await connectDb();
+//   console.info(`The bot ${bot.botInfo.username} is running on server`);
+// });
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
