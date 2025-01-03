@@ -9,7 +9,7 @@ interface IUserWallet extends Document {
 const UserWalletSchema: Schema = new Schema({
   username: { type: String, required: true, unique: true },
   address: { type: String, required: true },
-  privateKey: { type: String, required: true },
+  privateKey: { type: String, required: true, select: false },
 });
 
 const UserWallet = mongoose.model<IUserWallet>('UserWallet', UserWalletSchema);

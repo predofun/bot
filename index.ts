@@ -6,8 +6,7 @@ import axios from 'axios';
 import { config } from 'dotenv';
 import { connectDb } from './config/db';
 import { env } from './config/environment';
-import { classifyCommand, extractBetDetails, getPredoGameInfo } from './utils/gemini';
-import { createWallet, getWalletBalance } from './utils/wallet-infra';
+import { classifyCommand, getPredoGameInfo } from './utils/gemini';
 import start from './commands/start';
 import createBet from './commands/create-bet';
 import getBalance from './commands/get-balance';
@@ -33,16 +32,7 @@ bot.catch((err, ctx) => {
 
 // Start Command (in private chat)
 bot.command('start', async (ctx) => {
-  try {
-    await start(ctx).catch((error) => console.log('user has blocked bot'));
-  } catch (error) {
-    console.log(error);
-    if (error) {
-      // Handle blocked user case
-      console.log(`User has blocked the bot`);
-      // Optional: Remove user from your database or mark them as inactive
-    }
-  }
+    await start(ctx)
 });
 
 // Create Bet Command
@@ -143,21 +133,21 @@ bot.on('message', async (ctx) => {
   }
 });
 
-bot.launch({
-    webhook: {
-      domain: 'https://predo.up.railway.app',
-      port: 8000
-    }
-  })
-  .then(async () => {
-    // await connectDb();
-    console.info(`The bot ${bot.botInfo.username} is running on server`);
-  });
+// bot.launch({
+//     webhook: {
+//       domain: 'https://predo.up.railway.app',
+//       port: 8000
+//     }
+//   })
+//   .then(async () => {
+//     // await connectDb();
+//     console.info(`The bot ${bot.botInfo.username} is running on server`);
+//   });
 
-// bot.launch().then(async () => {
-//   // await connectDb();
-//   console.info(`The bot ${bot.botInfo.username} is running on server`);
-// });
+bot.launch().then( () => {
+  // await connectDb();
+  console.info(`The bot ${bot.botInfo.username} is running on server`);
+});
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
