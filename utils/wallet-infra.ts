@@ -6,6 +6,7 @@ import {
   LAMPORTS_PER_SOL,
   PublicKey,
   sendAndConfirmTransaction,
+  SolanaJSONRPCError,
   SystemProgram,
   Transaction
 } from '@solana/web3.js';
@@ -22,7 +23,7 @@ export async function createWallet() {
   // Extract the private key (secret key)
   const privateKey = keypair.secretKey;
   const transferTestSOL = await transfer(env.AGENT_WALLET, keypair.publicKey);
-  const balance = (await connection.getBalance(keypair.publicKey)) * SOL_TO_USDC;
+  const balance = await getWalletBalance(keypair.publicKey.toBase58());
   console.log(balance);
 
   return {
@@ -33,10 +34,24 @@ export async function createWallet() {
 }
 
 export async function getWalletBalance(walletLocator: string) {
-  const balance = await connection.getBalance(new PublicKey(walletLocator));
-  if (!balance) return 0;
-  const balanceUsdc = balance * SOL_TO_USDC;
-  return balanceUsdc.toFixed(2);
+  try {
+    const tokenAccount = new PublicKey(walletLocator);
+    const balance = await connection.getTokenAccountBalance(tokenAccount);
+    console.log(balance);
+    if (!balance) {
+      return 0;
+    }
+    console.log(`Amount: ${balance.value.amount}`);
+    console.log(`Decimals: ${balance.value.decimals}`);
+    return balance;
+  } catch (error) {
+    if (
+      error instanceof SolanaJSONRPCError &&
+      error.message.includes('failed to get token account balance')
+    ) {
+      return 0;
+    } else {
+      throw error;
+    }
+  }
 }
-
-

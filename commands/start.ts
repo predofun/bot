@@ -40,7 +40,7 @@ export default async function start(ctx: any) {
     `Your prediction journey begins now, ${username}! 🌟\n\n` +
     `🔑 Wallet Created:\n` +
     `└ Address: \`${wallet.address}\`\n\n` +
-    `💰 Starter Bonus: ${newWallet.balance.toFixed(2)} USDC\n` +
+    `💰 Starter Bonus: ${newWallet.balance} USDC\n` +
     `Your first step into the world of predictive excitement! 🎲\n\n` +
     `💡 Pro Tip: Use /bet to create your first prediction challenge!`
   );
