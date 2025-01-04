@@ -50,7 +50,7 @@ export default async function createBet(ctx, chatType) {
     endTime: new Date(betDetails.endTime)
   };
   
-  console.log(bet);
+  console.log(bet)
   
   const message = await ctx
     .replyWithPhoto(bet.image, {
