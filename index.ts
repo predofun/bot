@@ -125,7 +125,6 @@ bot.on('message', async (ctx) => {
         // case 'history':
         //   return fetchBetHistory(ctx);
         default:
-          console.log('default response');
           const gameInfo = await getPredoGameInfo(input);
           ctx.reply(gameInfo);
       }
