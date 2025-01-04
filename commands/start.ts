@@ -7,8 +7,8 @@ export default async function start(ctx: any) {
   const username = ctx.from?.username;
   if (!username) {
     ctx.reply(
-      `🚫 Prediction Portal Blocked! 🤖\n\n` +
-      `Oops! You need a Telegram username to enter the prediction realm. \n` +
+      `🚫 Betting Portal Blocked! 🤖\n\n` +
+      `Oops! You need a Telegram username to enter the betting realm. \n` +
       `Set up your username and prepare to challenge fate! 🎲`
     );
     return;
@@ -17,9 +17,9 @@ export default async function start(ctx: any) {
   const existingWallet = await UserWallet.findOne({ username });
   if (existingWallet) {
     ctx.reply(
-      `🙅‍♂️ You've already started your prediction journey! 🚀\n\n` +
+      `🙅‍♂️ You've already started your betting journey! 🚀\n\n` +
       `Your wallet is ready, and your fate is waiting. \n` +
-      `Use /bet to create your first prediction challenge!`
+      `Use /bet to create your first betting challenge!`
     );
     return;
   }
@@ -36,12 +36,12 @@ export default async function start(ctx: any) {
   );
 
   ctx.reply(
-    `🎉 Welcome to the Prediction Arena! 🚀\n\n` +
-    `Your prediction journey begins now, ${username}! 🌟\n\n` +
+    `🎉 Welcome to the Betting Arena! 🚀\n\n` +
+    `Your betting journey begins now, ${username}! 🌟\n\n` +
     `🔑 Wallet Created:\n` +
     `└ Address: \`${wallet.address}\`\n\n` +
-    `💰 Starter Bonus: ${newWallet.balance} USDC\n` +
-    `Your first step into the world of predictive excitement! 🎲\n\n` +
-    `💡 Pro Tip: Use /bet to create your first prediction challenge!`
+    `💰 Starter Balance: ${newWallet.balance} PREDO\n` +
+    `Your first step into the world of social betting excitement! 🎲\n\n` +
+    `💡 Pro Tip: Use /bet to create your first betting challenge!`
   );
 }
