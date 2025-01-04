@@ -105,25 +105,25 @@ bot.on('message', async (ctx) => {
         case 'balance':
           console.log('getting balance');
           return getBalance(ctx);
-        case 'bet':
-          console.log('betting');
-          return createBet(ctx);
-        case 'join':
-          return joinBet(ctx);
-        case 'resolve':
-          if (
-            //@ts-ignore
-            ctx.message.reply_to_message &&
-            //@ts-ignore
-            ctx.message.reply_to_message.from?.username === bot.botInfo?.username &&
-            //@ts-ignore
-            ctx.message.reply_to_message.chat.type === 'group'
-          ) {
-            // This is a reply to the bot's message
-            return resolveBet(ctx);
-          }
-        case 'history':
-          return fetchBetHistory(ctx);
+        // case 'bet':
+        //   console.log('betting');
+        //   return createBet(ctx);
+        // case 'join':
+        //   return joinBet(ctx);
+        // case 'resolve':
+        //   if (
+        //     //@ts-ignore
+        //     ctx.message.reply_to_message &&
+        //     //@ts-ignore
+        //     ctx.message.reply_to_message.from?.username === bot.botInfo?.username &&
+        //     //@ts-ignore
+        //     ctx.message.reply_to_message.chat.type === 'group'
+        //   ) {
+        //     // This is a reply to the bot's message
+        //     return resolveBet(ctx);
+        //   }
+        // case 'history':
+        //   return fetchBetHistory(ctx);
         default:
           console.log('default response');
           const gameInfo = await getPredoGameInfo(input);
