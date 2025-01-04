@@ -41,7 +41,7 @@ export default async function getBalance(ctx) {
     ctx.reply(
       `💼 *Bet Wallet Status* 🎯\n\n` +
         `🔑 Address: \`${wallet.address}\`\n` +
-        `💰 Balance: *${balance} PREDO*\n\n` +
+        `💰 Balance: *${balance} SOL*\n\n` +
         `${balanceMessages[0]}`,
       {
         parse_mode: 'Markdown'
