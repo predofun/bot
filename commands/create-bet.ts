@@ -1,7 +1,7 @@
 import { extractBetDetails } from '../utils/gemini';
 import Bet from '../models/bet.schema';
 
-export default async function createBet(ctx) {
+export default async function createBet(ctx, chatType) {
   const input =
     ctx.message.text.split('/bet')[1]?.trim() ||
     ctx.message.text.split(`@predofun_bot`)[1]?.trim() ||
@@ -25,7 +25,7 @@ export default async function createBet(ctx) {
     return;
   }
 
-  const { object: betDetails } = await extractBetDetails(input);
+  const { object: betDetails } = await extractBetDetails(input, chatType);
   console.log(betDetails);
   
   const betImages = [

@@ -8,8 +8,8 @@ export default async function start(ctx: any) {
   if (!username) {
     ctx.reply(
       `🚫 Betting Portal Blocked! 🤖\n\n` +
-      `Oops! You need a Telegram username to enter the betting realm. \n` +
-      `Set up your username and prepare to challenge fate! 🎲`
+        `Oops! You need a Telegram username to enter the betting realm. \n` +
+        `Set up your username and prepare to challenge fate! 🎲`
     );
     return;
   }
@@ -18,8 +18,8 @@ export default async function start(ctx: any) {
   if (existingWallet) {
     ctx.reply(
       `🙅‍♂️ You've already started your betting journey! 🚀\n\n` +
-      `Your wallet is ready, and your fate is waiting. \n` +
-      `Use /bet to create your first betting challenge!`
+        `Your wallet is ready, and your fate is waiting. \n` +
+        `Use /bet to create your first betting challenge!`
     );
     return;
   }
@@ -35,13 +35,14 @@ export default async function start(ctx: any) {
     { upsert: true, new: true }
   );
 
-  ctx.reply(
+  ctx.replyWithPhoto(
+    `https://res.cloudinary.com/dbuaprzc0/image/upload/v1735991233/a2ln2zbdksmibvyux53n.gif`,
     `🎉 Welcome to the Betting Arena! 🚀\n\n` +
-    `Your betting journey begins now, ${username}! 🌟\n\n` +
-    `🔑 Wallet Created:\n` +
-    `└ Address: \`${wallet.address}\`\n\n` +
-    `💰 Starter Balance: ${newWallet.balance} PREDO\n` +
-    `Your first step into the world of social betting excitement! 🎲\n\n` +
-    `💡 Pro Tip: Use /bet to create your first betting challenge!`
+      `Your betting journey begins now, ${username}! 🌟\n\n` +
+      `🔑 Wallet Created:\n` +
+      `└ Address: \`${wallet.address}\`\n\n` +
+      `💰 Starter Balance: ${newWallet.balance} SOL\n` +
+      `Your first step into the world of social betting excitement! 🎲\n\n` +
+      `💡 Pro Tip: Use /bet to create your first betting challenge!`
   );
 }

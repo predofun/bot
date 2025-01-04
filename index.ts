@@ -32,12 +32,12 @@ bot.catch((err, ctx) => {
 
 // Start Command (in private chat)
 bot.command('start', async (ctx) => {
-    await start(ctx)
+  await start(ctx);
 });
 
 // Create Bet Command
 bot.command('bet', async (ctx) => {
-  await createBet(ctx);
+  await createBet(ctx, ctx.chat.type);
 });
 
 // Balance Command
@@ -86,7 +86,7 @@ bot.command('vote', async (ctx) => {
 
 // Resolve Command
 bot.command('resolve', async (ctx) => {
-  await resolveBet(ctx);
+  await resolveBet(ctx, ctx.chat.type);
 });
 
 bot.on('message', async (ctx) => {
@@ -99,7 +99,7 @@ bot.on('message', async (ctx) => {
   if (ctx.chat.type === 'private' || (mentionRegex.test(inputText) && ctx.chat.type === 'group')) {
     const input = inputText?.replace(mentionRegex, '').trim();
     if (input) {
-      const { result: command } = await classifyCommand(input);
+      const { result: command } = await classifyCommand(input, ctx.chat.type);
       console.log(command);
       switch (command) {
         case 'balance':
@@ -107,7 +107,7 @@ bot.on('message', async (ctx) => {
           return getBalance(ctx);
         case 'bet':
           console.log('betting');
-          return createBet(ctx);
+          return createBet(ctx, ctx.chat.type);
         case 'join':
           return joinBet(ctx);
         case 'resolve':
@@ -120,12 +120,12 @@ bot.on('message', async (ctx) => {
             ctx.message.reply_to_message.chat.type === 'group'
           ) {
             // This is a reply to the bot's message
-            return resolveBet(ctx);
+            return resolveBet(ctx, ctx.chat.type);
           }
         case 'history':
           return fetchBetHistory(ctx);
         default:
-          console.log('predo fun reply')
+          console.log('predo fun reply');
           const gameInfo = await getPredoGameInfo(input, ctx.from?.username, ctx.chat.type);
           ctx.reply(gameInfo);
       }
@@ -144,7 +144,7 @@ bot.on('message', async (ctx) => {
 //     console.info(`The bot ${bot.botInfo.username} is running on server`);
 //   });
 
-bot.launch().then( () => {
+bot.launch().then(() => {
   // await connectDb();
   console.info(`The bot ${bot.botInfo.username} is running on server`);
 });

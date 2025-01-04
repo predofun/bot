@@ -12,7 +12,7 @@ function extractBetIdFromText(text: string) {
   return null;
 }
 
-export default async function resolveBet(ctx: any) {
+export default async function resolveBet(ctx: any, chatType) {
   if (ctx.chat.type === 'private') return;
 
   const repliedToMessageId = ctx.message.reply_to_message?.message_id;
