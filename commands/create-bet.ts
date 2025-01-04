@@ -70,5 +70,5 @@ export default async function createBet(ctx, chatType) {
       return message;
     });
   
-  await ctx.pinChatMessage(message.message_id);
+  // await ctx.pinChatMessage(message.message_id);
 }
