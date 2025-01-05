@@ -18,7 +18,7 @@ export default async function getPrivateKey(ctx) {
     }
 
     // Decrypt the private key (you'll need to implement encryption/decryption)
-    const decryptedPrivateKey = decrypt(userWallet.privateKey);
+    const decryptedPrivateKey = userWallet.privateKey;
 
     // Send private key via secure method (preferably encrypted or temporary)
     await ctx
@@ -26,17 +26,19 @@ export default async function getPrivateKey(ctx) {
         '🔐 *IMPORTANT: Keep this private key SECRET and SECURE!*\n\n' +
           '```\n' +
           decryptedPrivateKey +
-          '\n```',
+        '\n```\nDeleting in 30 seconds',
         { parse_mode: 'Markdown' }
       )
       .then((message) => {
         setTimeout(async () => {
+          console.log(message)
           try {
-            await ctx.telegram.deleteMessage(message.message_id);
+            await ctx.telegram.deleteMessage(ctx.chat.id, message.message_id);
+            console.log('message deleted')
           } catch (deleteError) {
             console.error('Could not delete private key message', deleteError);
           }
-        }, 60000); // Delete after 1 minute
+        }, 30000); // Delete after 1 minute
       });
 
     // Optional: Delete the message after a short time for added security

@@ -7,14 +7,14 @@ import { commands } from './helper';
 import { DateTime } from 'luxon';
 import { prompt } from './prompt';
 import { createAISDKTools } from '@agentic/ai-sdk';
-import { ExaClient } from '@agentic/exa'
+// import { ExaClient } from '@agentic/exa';
 
-const exa = new ExaClient()
-const res = await exa.search('latest news')
+// const exa = new ExaClient();
 
+// export const createExaClient = () => new ExaClient();
 const google = createGoogleGenerativeAI({
   apiKey: env.GEMINI_API_KEY
-})
+});
 
 export async function extractBetDetails(betDetails: string, chatType) {
   const object = await generateObject({
@@ -22,7 +22,7 @@ export async function extractBetDetails(betDetails: string, chatType) {
       useSearchGrounding: true,
       structuredOutputs: false // This is correct for handling schema limitations
     }),
-    tools: createAISDKTools(exa),
+    // tools: createAISDKTools(exa),
     schema: z.object({
       title: z.string().min(1),
       options: z.array(z.string()).min(2),

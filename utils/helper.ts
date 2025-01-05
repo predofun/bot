@@ -1,7 +1,8 @@
+
+import { env } from '../config/environment';
 import UserWallet from '../models/user-wallet.schema';
 import { encrypt } from './encryption';
 import mongoose from 'mongoose';
-import { env } from '../config/environment';
 import { Context } from 'telegraf';
 import {
   TransactionMessage,
@@ -102,55 +103,125 @@ export async function transfer(privateKeyFrom: string, publicKey: PublicKey) {
 
 export const commands = ['balance', 'fund', 'bet', 'join', 'vote', 'resolve'];
 
-export async function encryptAllWalletPrivateKeys() {
+// export async function encryptAllWalletPrivateKeys() {
+//   try {
+//     // Connect to MongoDB if not already connected
+//     if (mongoose.connection.readyState === 0) {
+//       await mongoose.connect(env.MONGODB_URI);
+//     }
+
+//     // Find all wallets
+//     const wallets = await UserWallet.find({}).select('_id privateKey');
+
+//     let encryptedCount = 0;
+//     let skippedCount = 0;
+
+//     for (const wallet of wallets) {
+//       try {
+//         // Check if privateKey is already encrypted (contains ':')
+//         console.log(wallet)
+//         if (wallet.privateKey.includes(':')) {
+//           skippedCount++;
+//           continue;
+//         }
+
+//         // Encrypt the private key
+//         const encryptedPrivateKey = encrypt(wallet.privateKey);
+
+//         // Update the wallet with encrypted private key
+//         await UserWallet.findByIdAndUpdate(wallet._id, {
+//           privateKey: encryptedPrivateKey
+//         });
+
+//         encryptedCount++;
+//       } catch (walletError) {
+//         console.error(`Error processing wallet ${wallet._id}:`, walletError);
+//       }
+//     }
+
+//     console.log(`Encryption complete. 
+//       Encrypted: ${encryptedCount} wallets
+//       Skipped (already encrypted): ${skippedCount}`);
+
+//     return {
+//       encryptedCount,
+//       skippedCount
+//     };
+//   } catch (error) {
+//     console.error('Error encrypting wallet private keys:', error);
+//     throw error;
+//   } finally {
+//     // Optionally close the connection if you want
+//     // await mongoose.connection.close();
+//   }
+// }
+
+
+
+interface WalletBalance {
+  username: string;
+  address: string;
+  balance: number;
+}
+
+export async function checkAllUserWalletBalances(): Promise<WalletBalance[]> {
   try {
-    // Connect to MongoDB if not already connected
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(env.MONGODB_URI);
-    }
+    // Create a connection to the Solana network
+    const connection = new Connection(env.HELIUS_RPC_URL, 'confirmed');
 
-    // Find all wallets
-    const wallets = await UserWallet.find({}).select('_id privateKey');
+    // Fetch all user wallets
+    const userWallets = await UserWallet.find({}).select('username address');
 
-    let encryptedCount = 0;
-    let skippedCount = 0;
+    // Store balances
+    const walletBalances: WalletBalance[] = [];
 
-    for (const wallet of wallets) {
+    // Check balance for each wallet
+    for (const wallet of userWallets) {
       try {
-        // Check if privateKey is already encrypted (contains ':')
-        console.log(wallet)
-        if (wallet.privateKey.includes(':')) {
-          skippedCount++;
-          continue;
+        // Convert address to PublicKey
+        const publicKey = new PublicKey(wallet.address);
+
+        // Get SOL balance
+        const balanceLamports = await connection.getBalance(publicKey);
+        const balanceSOL = balanceLamports / LAMPORTS_PER_SOL;
+
+        // Only add wallets with non-zero balance
+        if (balanceSOL > 0) {
+          walletBalances.push({
+            username: wallet.username,
+            address: wallet.address,
+            balance: balanceSOL
+          });
         }
-
-        // Encrypt the private key
-        const encryptedPrivateKey = encrypt(wallet.privateKey);
-
-        // Update the wallet with encrypted private key
-        await UserWallet.findByIdAndUpdate(wallet._id, {
-          privateKey: encryptedPrivateKey
-        });
-
-        encryptedCount++;
       } catch (walletError) {
-        console.error(`Error processing wallet ${wallet._id}:`, walletError);
+        console.error(`Error checking balance for wallet ${wallet.address}:`, walletError);
       }
     }
 
-    console.log(`Encryption complete. 
-      Encrypted: ${encryptedCount} wallets
-      Skipped (already encrypted): ${skippedCount}`);
+    // Sort balances in descending order
+    walletBalances.sort((a, b) => b.balance - a.balance);
 
-    return {
-      encryptedCount,
-      skippedCount
-    };
+    return walletBalances;
   } catch (error) {
-    console.error('Error encrypting wallet private keys:', error);
-    throw error;
-  } finally {
-    // Optionally close the connection if you want
-    // await mongoose.connection.close();
+    console.error('Error checking user wallet balances:', error);
+    return [];
   }
+}
+
+// Optional: Add a CLI-friendly function to run this directly
+if (require.main === module) {
+  checkAllUserWalletBalances()
+    .then((balances) => {
+      console.log('Wallets with SOL balances:');
+      balances.forEach((wallet) => {
+        console.log(
+          `Username: ${wallet.username}, Address: ${wallet.address}, Balance: ${wallet.balance} SOL`
+        );
+      });
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error(error);
+      process.exit(1);
+    });
 }

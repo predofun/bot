@@ -30,13 +30,15 @@ interface Environment {
   ENCRYPTION_KEY?: string;
 
   EXA_API_KEY?: string;
-
-  
 }
 
 // Create an object with environment variables
+console.log(process.env.MODE);
 export const env: Environment = {
-  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
+  TELEGRAM_BOT_TOKEN:
+    process.env.MODE === 'prod'
+      ? process.env.TELEGRAM_BOT_TOKEN_PROD!
+      : process.env.TELEGRAM_BOT_TOKEN_DEV!,
   SOLANA_NETWORK: process.env.SOLANA_NETWORK || 'devnet',
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/predoApp',
   NODE_ENV: process.env.NODE_ENV || 'development',
@@ -44,10 +46,9 @@ export const env: Environment = {
   CROSSMINT_API_KEY: process.env.CROSSMINT_API_KEY || '',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   AGENT_WALLET: process.env.AGENT_WALLET || '',
-  HELIUS_RPC_URL: `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_RPC_URL}` || '',
+  HELIUS_RPC_URL: `https://devnet.helius-rpc.com/?api-key=${process.env.HELIUS_RPC_URL}` || '',
   ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || '',
   EXA_API_KEY: process.env.EXA_API_KEY || ''
-
 };
 
 // Optional: Add validation function to ensure critical env vars are present

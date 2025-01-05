@@ -14,7 +14,7 @@ import getBalance from './commands/get-balance';
 import joinBet from './commands/join-bet';
 import resolveBet from './commands/close-bet';
 import fetchBetHistory from './commands/fetch-bet-history';
-import { encryptAllWalletPrivateKeys } from './utils/helper';
+// import { encryptAllWalletPrivateKeys } from './utils/helper';
 
 config();
 connectDb();

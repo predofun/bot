@@ -1,4 +1,5 @@
 import UserWallet from '../models/user-wallet.schema';
+import { checkAllUserWalletBalances } from '../utils/helper';
 import { getWalletBalance } from '../utils/wallet-infra';
 
 export default async function getBalance(ctx) {
@@ -37,7 +38,6 @@ export default async function getBalance(ctx) {
         ? `🚀 Bet Fuel Building Up! You're ready for some serious wagering! 🎲`
         : `🏆 Bet Champion Wallet Alert! 💰 You're armed and dangerous! 🔥`
     ];
-
     ctx.reply(
       `💼 *Bet Wallet Status* 🎯\n\n` +
         `🔑 Address: \`${wallet.address}\`\n` +
