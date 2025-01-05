@@ -27,7 +27,11 @@ interface Environment {
 
   AGENT_WALLET?: string;
 
-  ENCRYPTION_KEY?: string
+  ENCRYPTION_KEY?: string;
+
+  EXA_API_KEY?: string;
+
+  
 }
 
 // Create an object with environment variables
@@ -41,7 +45,8 @@ export const env: Environment = {
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   AGENT_WALLET: process.env.AGENT_WALLET || '',
   HELIUS_RPC_URL: `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_RPC_URL}` || '',
-  ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || ''
+  ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || '',
+  EXA_API_KEY: process.env.EXA_API_KEY || ''
 
 };
 
@@ -56,7 +61,8 @@ export function validateEnvironment() {
     'GEMINI_API_KEY',
     'AGENT_WALLET',
     'HELIUS_RPC_URL',
-    'ENCRYPTION_KEY'
+    'ENCRYPTION_KEY',
+    'EXA_API_KEY'
   ];
 
   for (const varName of requiredVars) {

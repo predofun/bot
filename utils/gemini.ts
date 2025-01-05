@@ -6,17 +6,23 @@ import { env } from '../config/environment';
 import { commands } from './helper';
 import { DateTime } from 'luxon';
 import { prompt } from './prompt';
+import { createAISDKTools } from '@agentic/ai-sdk';
+import { ExaClient } from '@agentic/exa'
+
+const exa = new ExaClient()
+const res = await exa.search('latest news')
 
 const google = createGoogleGenerativeAI({
   apiKey: env.GEMINI_API_KEY
-});
-// 
+})
+
 export async function extractBetDetails(betDetails: string, chatType) {
   const object = await generateObject({
     model: google('gemini-2.0-flash-exp', {
       useSearchGrounding: true,
       structuredOutputs: false // This is correct for handling schema limitations
     }),
+    tools: createAISDKTools(exa),
     schema: z.object({
       title: z.string().min(1),
       options: z.array(z.string()).min(2),
