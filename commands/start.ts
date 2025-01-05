@@ -17,7 +17,7 @@ export default async function start(ctx: any) {
   const existingWallet = await UserWallet.findOne({ username });
   if (existingWallet) {
     ctx.reply(
-      `🙅‍♂️ You've already started your betting journey! 🚀\n\n` +
+      `🙅‍♂️ You've already started your betting journey! 🚀\n` +
         `Your wallet is ready, and your fate is waiting. \n` +
         `Use /bet to create your first betting challenge!`
     );
@@ -37,12 +37,15 @@ export default async function start(ctx: any) {
 
   ctx.replyWithPhoto(
     `https://res.cloudinary.com/dbuaprzc0/image/upload/v1735991233/a2ln2zbdksmibvyux53n.gif`,
-    `🎉 Welcome to the Betting Arena! 🚀\n\n` +
-      `Your betting journey begins now, ${username}! 🌟\n\n` +
-      `🔑 Wallet Created:\n` +
-      `└ Address: \`${wallet.address}\`\n\n` +
-      `💰 Starter Balance: ${newWallet.balance} SOL\n` +
-      `Your first step into the world of social betting excitement! 🎲\n\n` +
-      `💡 Pro Tip: Use /bet to create your first betting challenge!`
+    {
+      caption:
+        `🎉 Welcome to the Betting Arena! 🚀\n\n` +
+        `Your betting journey begins now, ${username}! 🌟\n\n` +
+        `🔑 Wallet Created:\n` +
+        `└ Address: \`${wallet.address}\`\n\n` +
+        `💰 Starter Balance: ${newWallet.balance} SOL\n` +
+        `Your first step into the world of social betting excitement! 🎲\n\n` +
+        `💡 Pro Tip: Use /bet to create your first betting challenge!`
+    }
   );
 }
