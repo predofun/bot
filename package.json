@@ -12,6 +12,7 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
+        "@agentic/ai-sdk": "^7.2.0",
         "@ai-sdk/google": "^1.0.12",
         "@ai-sdk/openai": "^1.0.4",
         "@ai-sdk/openai-compatible": "^0.0.11",

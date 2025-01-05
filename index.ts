@@ -11,7 +11,7 @@ import start from './commands/start';
 import createBet from './commands/create-bet';
 import getBalance from './commands/get-balance';
 import joinBet from './commands/join-bet';
-import resolveBet from './commands/resolve-bet';
+import resolveBet from './commands/close-bet';
 import fetchBetHistory from './commands/fetch-bet-history';
 
 config();

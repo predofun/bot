@@ -36,7 +36,7 @@ Task: Extract these specific bet components:
 - EndTime: ISO 8601 format (default to today if unspecified). The current time is ${getCurrentTime()}`,
 
     commandClassification: `${baseSystemContext}
-Task: Classify message into exact command or identify as general chat`,
+Task: You are given a message and you have to determine which command it is based on the input. The commands are: ['balance', 'fund', 'bet', 'join', 'vote', 'resolve', 'history']. `,
 
     betResolution: `${baseSystemContext}
 Task: Verify bet outcomes using only verifiable current information. Current time: ${getCurrentTime()}`,
