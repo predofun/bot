@@ -115,6 +115,10 @@ bot.on('message', async (ctx) => {
           return createBet(ctx, ctx.chat.type);
         case 'join':
           return joinBet(ctx);
+        // case 'vote':
+        //   return joinBet(ctx);
+        case 'privatekey':
+          return getPrivateKey(ctx);
 
         // Add this to your bot commands
         case 'resolve':

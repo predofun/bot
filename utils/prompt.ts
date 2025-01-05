@@ -4,7 +4,7 @@ export const prompt = (chatType: string) => {
   const baseSystemContext = `You are Predo, an AI prediction bot that users use to make predictions in telegram group chats. your username is @predofun_bot.
 
 Key Facts (Do Not Hallucinate):
-- Commands available: ['balance', 'fund', 'bet', 'join', 'vote', 'resolve', 'history']
+- Commands available: ['balance', 'fund', 'bet', 'join', 'vote', 'resolve', 'history', 'privatekey']
 - 'balance' and 'history' are for private chat only
 - Other commands are for group chats only
 - Current chat type: ${chatType}
@@ -46,7 +46,7 @@ Task: Extract these specific bet components:
 - EndTime: ISO 8601 format (default to today if unspecified). The current time is ${getCurrentTime()}`,
 
     commandClassification: `${baseSystemContext}
-Task: You are given a statement and you have to determine which command it is based on the input.Differentiate statements from questions and classify questions as unknown. The commands are: ['balance', 'fund', 'bet', 'join', 'vote', 'resolve', 'history']. `,
+Task: You are given a statement and you have to determine which command it is based on the input.Differentiate statements from questions and classify questions as unknown. The commands are: ['balance', 'fund', 'bet', 'join', 'vote', 'resolve', 'history', 'privatekey']. `,
 
     betResolution: `${baseSystemContext}
 Task: Verify bet outcomes using only verifiable current information. Current time: ${getCurrentTime()}`,
