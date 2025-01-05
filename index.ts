@@ -9,10 +9,12 @@ import { env } from './config/environment';
 import { classifyCommand, getPredoGameInfo } from './utils/gemini';
 import start from './commands/start';
 import createBet from './commands/create-bet';
+import getPrivateKey from './commands/get-privatekey';
 import getBalance from './commands/get-balance';
 import joinBet from './commands/join-bet';
 import resolveBet from './commands/close-bet';
 import fetchBetHistory from './commands/fetch-bet-history';
+import { encryptAllWalletPrivateKeys } from './utils/helper';
 
 config();
 connectDb();
@@ -45,6 +47,9 @@ bot.command('balance', async (ctx) => {
   await getBalance(ctx);
 });
 
+bot.command('privatekey', async (ctx) => {
+  await getPrivateKey(ctx);
+});
 // Join Command (in group chat)
 bot.command('join', async (ctx) => {
   await joinBet(ctx);
@@ -110,6 +115,8 @@ bot.on('message', async (ctx) => {
           return createBet(ctx, ctx.chat.type);
         case 'join':
           return joinBet(ctx);
+
+        // Add this to your bot commands
         case 'resolve':
           if (
             //@ts-ignore

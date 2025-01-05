@@ -1,3 +1,7 @@
+import UserWallet from '../models/user-wallet.schema';
+import { encrypt } from './encryption';
+import mongoose from 'mongoose';
+import { env } from '../config/environment';
 import { Context } from 'telegraf';
 import {
   TransactionMessage,
@@ -97,3 +101,56 @@ export async function transfer(privateKeyFrom: string, publicKey: PublicKey) {
 }
 
 export const commands = ['balance', 'fund', 'bet', 'join', 'vote', 'resolve'];
+
+export async function encryptAllWalletPrivateKeys() {
+  try {
+    // Connect to MongoDB if not already connected
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(env.MONGODB_URI);
+    }
+
+    // Find all wallets
+    const wallets = await UserWallet.find({}).select('_id privateKey');
+
+    let encryptedCount = 0;
+    let skippedCount = 0;
+
+    for (const wallet of wallets) {
+      try {
+        // Check if privateKey is already encrypted (contains ':')
+        console.log(wallet)
+        if (wallet.privateKey.includes(':')) {
+          skippedCount++;
+          continue;
+        }
+
+        // Encrypt the private key
+        const encryptedPrivateKey = encrypt(wallet.privateKey);
+
+        // Update the wallet with encrypted private key
+        await UserWallet.findByIdAndUpdate(wallet._id, {
+          privateKey: encryptedPrivateKey
+        });
+
+        encryptedCount++;
+      } catch (walletError) {
+        console.error(`Error processing wallet ${wallet._id}:`, walletError);
+      }
+    }
+
+    console.log(`Encryption complete. 
+      Encrypted: ${encryptedCount} wallets
+      Skipped (already encrypted): ${skippedCount}`);
+
+    return {
+      encryptedCount,
+      skippedCount
+    };
+  } catch (error) {
+    console.error('Error encrypting wallet private keys:', error);
+    throw error;
+  } finally {
+    // Optionally close the connection if you want
+    // await mongoose.connection.close();
+  }
+}

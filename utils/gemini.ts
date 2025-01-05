@@ -73,7 +73,7 @@ export async function getPredoGameInfo(query: string, username, chatType) {
   // If no predefined response, use Gemini for an ultra-concise answer
   const { text } = await generateText({
     model: google('gemini-2.0-flash-exp', { useSearchGrounding: true }),
-    system:  ``,
+    system: prompt(chatType).predoGameInfo,
     prompt: `Username: ${username}: ${query}`
   });
   console.log(text);

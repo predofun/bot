@@ -26,6 +26,8 @@ interface Environment {
   GEMINI_API_KEY?: string;
 
   AGENT_WALLET?: string;
+
+  ENCRYPTION_KEY?: string
 }
 
 // Create an object with environment variables
@@ -38,7 +40,9 @@ export const env: Environment = {
   CROSSMINT_API_KEY: process.env.CROSSMINT_API_KEY || '',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   AGENT_WALLET: process.env.AGENT_WALLET || '',
-  HELIUS_RPC_URL: `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_RPC_URL}` || ''
+  HELIUS_RPC_URL: `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_RPC_URL}` || '',
+  ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || ''
+
 };
 
 // Optional: Add validation function to ensure critical env vars are present
@@ -51,7 +55,8 @@ export function validateEnvironment() {
     'CROSSMINT_API_KEY',
     'GEMINI_API_KEY',
     'AGENT_WALLET',
-    'HELIUS_RPC_URL'
+    'HELIUS_RPC_URL',
+    'ENCRYPTION_KEY'
   ];
 
   for (const varName of requiredVars) {
