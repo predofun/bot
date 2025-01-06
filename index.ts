@@ -129,11 +129,11 @@ bot.on('message', async (ctx) => {
         case 'balance':
           console.log('getting balance');
           return getBalance(ctx);
-        case 'bet':
-          console.log('betting');
-          return createBet(ctx, ctx.chat.type);
-        case 'join':
-          return joinBet(ctx);
+        // case 'bet':
+        //   console.log('betting');
+        //   return createBet(ctx, ctx.chat.type);
+        // case 'join':
+        //   return joinBet(ctx);
         // case 'vote':
         //   return joinBet(ctx);
         case 'privatekey':
