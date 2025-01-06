@@ -1,5 +1,4 @@
 import { Telegraf, Scenes, session, Context, TelegramError } from 'telegraf';
-import { Connection, PublicKey } from '@solana/web3.js';
 import Bet from './models/bet.schema';
 import UserWallet from './models/user-wallet.schema';
 import axios from 'axios';
@@ -14,16 +13,34 @@ import getBalance from './commands/get-balance';
 import joinBet from './commands/join-bet';
 import resolveBet from './commands/close-bet';
 import fetchBetHistory from './commands/fetch-bet-history';
-// import { encryptAllWalletPrivateKeys } from './utils/helper';
+import withdrawScene from './commands/withdraw-funds'
+import { WizardSessionData } from 'telegraf/typings/scenes';
 
 config();
 connectDb();
+
+// Extend WizardSessionData to include withdrawData
+declare module 'telegraf/typings/scenes' {
+  export interface WizardSessionData {
+    withdrawData?: {
+      address?: string;
+    };
+  }
+}
+
 export interface MyContext extends Context {
-  scene: Scenes.SceneContextScene<MyContext>;
+  scene: Scenes.SceneContextScene<MyContext, WizardSessionData>;
+  wizard: Scenes.WizardContextWizard<MyContext>;
 }
 
 // Initialize bot and APIs
 const bot = new Telegraf<MyContext>(env.TELEGRAM_BOT_TOKEN!);
+
+const stage = new Scenes.Stage<MyContext>([withdrawScene]);
+
+// Add session and stage middleware
+bot.use(session());
+bot.use(stage.middleware());
 
 bot.catch((err, ctx) => {
   if (err instanceof TelegramError && err.response.error_code === 403) {
@@ -46,6 +63,8 @@ bot.command('bet', async (ctx) => {
 bot.command('balance', async (ctx) => {
   await getBalance(ctx);
 });
+
+bot.command('withdraw', (ctx) => ctx.scene.enter('withdraw'));
 
 bot.command('privatekey', async (ctx) => {
   await getPrivateKey(ctx);
@@ -143,17 +162,6 @@ bot.on('message', async (ctx) => {
     }
   }
 });
-
-// bot.launch({
-//     webhook: {
-//       domain: 'https://predo.up.railway.app',
-//       port: 8000
-//     }
-//   })
-//   .then(async () => {
-//     // await connectDb();
-//     console.info(`The bot ${bot.botInfo.username} is running on server`);
-//   });
 
 bot.launch().then(() => {
   // await connectDb();
