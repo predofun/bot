@@ -3,6 +3,7 @@ import { decrypt } from '../utils/encryption';
 
 export default async function getPrivateKey(ctx) {
   try {
+    if (ctx.chat.type !== 'private') return;
     // Ensure the user has a username
     const username = ctx.from?.username;
     if (!username) {

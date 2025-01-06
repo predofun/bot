@@ -28,6 +28,8 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
     const address = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
 
     try {
+      const address = ctx.scene.session.withdrawData.address;
+      console.log(address)
       const pubkey = new PublicKey(address);
       ctx.scene.session.withdrawData.address = address;
       await ctx.reply('Enter the amount of SOL to withdraw. Minimum withdrawal is 0.005 SOL:');
@@ -44,22 +46,21 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
     const amount = parseFloat(text);
     const { address } = ctx.scene.session.withdrawData;
 
-
     if (isNaN(amount) || amount < 0) {
       await ctx.reply('❌ Invalid amount. Please try again with /withdraw');
       return ctx.scene.leave();
     }
 
-    if (amount < 0.01) {
-      await ctx.reply(
-        '❌ Minimum withdrawal amount is 0.005 SOL. Please try again with /withdraw'
-      );
+    if (amount < 0.005) {
+      await ctx.reply('❌ Minimum withdrawal amount is 0.005 SOL. Please try again with /withdraw');
       return ctx.scene.leave();
     }
 
     try {
-      const recipient = new PublicKey(address);
-      const user = await UserWallet.findOne({ username: ctx.from?.username });
+      console.log(address)
+      const recipient = new PublicKey(address.trim());
+      const user = await UserWallet.findOne({ username: ctx.from?.username }).select('privateKey');
+
       if (!user) {
         await ctx.reply('❌ User not found. Please try again with /withdraw');
         return ctx.scene.leave();
@@ -71,13 +72,15 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
         await ctx.reply(`❌ Insufficient balance. Please try again with /withdraw`);
         return ctx.scene.leave();
       }
-      const transferTx = await transfer(user[0].privateKey, recipient, amount);
+      console.log(user.privateKey, recipient, amount);
+      const transferTx = await transfer(user.privateKey, recipient, amount);
       console.log(transferTx);
       await ctx.reply(
         `✅ Successfully withdrew ${amount} SOL to ${address}\nTransaction: https://solscan.io/tx/${transferTx}?cluster=devnet`
       );
     } catch (error) {
-      await ctx.reply(`❌ Error processing withdrawal: ${error.message}`);
+      console.log(error);
+      await ctx.reply(`❌ Error processing withdrawal. Please try again with /withdraw`);
     }
 
     return ctx.scene.leave();
