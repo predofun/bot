@@ -19,12 +19,15 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
   'withdraw',
   // Step 1: Ask for address
   async (ctx) => {
+    if (ctx.chat.type !== 'private') return;
     await ctx.reply('Please enter the Solana address to withdraw to:');
     ctx.scene.session.withdrawData = {} as WithdrawData;
     return ctx.wizard.next();
   },
   // Step 2: Validate address and ask for amount
   async (ctx) => {
+    if (ctx.chat.type !== 'private') return;
+
     const address = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
 
     try {
@@ -43,6 +46,7 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
   },
   // Step 3: Process withdrawal
   async (ctx) => {
+    if (ctx.chat.type !== 'private') return;
     const text = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
 
     const amount = parseFloat(text);
