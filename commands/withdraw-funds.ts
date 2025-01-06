@@ -47,7 +47,6 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
 
     const amount = parseFloat(text);
     const { address } = ctx.scene.session.withdrawData;
-    console.log(address, 'step 3')
 
     if (isNaN(amount) || amount < 0) {
       await ctx.reply('❌ Invalid amount. Please try again with /withdraw');
@@ -75,7 +74,6 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
         await ctx.reply(`❌ Insufficient balance. Please try again with /withdraw`);
         return ctx.scene.leave();
       }
-      console.log(user.privateKey, recipient, amount);
       const transferTx = await transfer(user.privateKey, recipient, amount);
       console.log(transferTx);
       await ctx.reply(
