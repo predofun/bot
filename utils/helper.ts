@@ -1,4 +1,3 @@
-
 import { env } from '../config/environment';
 import UserWallet from '../models/user-wallet.schema';
 import { encrypt } from './encryption';
@@ -24,7 +23,7 @@ import {
 } from '@solana/spl-token';
 import bs58 from 'bs58';
 
-const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+const connection = new Connection(env.HELIUS_RPC_URL, 'confirmed');
 
 // USDC token mint address on Solana
 export const USDC_MINT = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
@@ -88,17 +87,17 @@ async function createUSDCTransferTransaction(
   return bs58.encode(transaction.serialize());
 }
 
-export async function transfer(privateKeyFrom: string, publicKey: PublicKey) {
+export async function transfer(privateKeyFrom: string, publicKey: PublicKey, amount: number = 0.1) {
   const fromKeypair = Keypair.fromSecretKey(Buffer.from(privateKeyFrom, 'base64'));
 
   const transaction = new Transaction().add(
     SystemProgram.transfer({
       fromPubkey: fromKeypair.publicKey,
       toPubkey: publicKey,
-      lamports: LAMPORTS_PER_SOL * 0.1
+      lamports: LAMPORTS_PER_SOL * amount
     })
   );
-  await sendAndConfirmTransaction(connection, transaction, [fromKeypair]);
+  return await sendAndConfirmTransaction(connection, transaction, [fromKeypair]);
 }
 
 export const commands = ['balance', 'fund', 'bet', 'join', 'vote', 'resolve'];
@@ -139,7 +138,7 @@ export const commands = ['balance', 'fund', 'bet', 'join', 'vote', 'resolve'];
 //       }
 //     }
 
-//     console.log(`Encryption complete. 
+//     console.log(`Encryption complete.
 //       Encrypted: ${encryptedCount} wallets
 //       Skipped (already encrypted): ${skippedCount}`);
 
@@ -155,73 +154,3 @@ export const commands = ['balance', 'fund', 'bet', 'join', 'vote', 'resolve'];
 //     // await mongoose.connection.close();
 //   }
 // }
-
-
-
-interface WalletBalance {
-  username: string;
-  address: string;
-  balance: number;
-}
-
-export async function checkAllUserWalletBalances(): Promise<WalletBalance[]> {
-  try {
-    // Create a connection to the Solana network
-    const connection = new Connection(env.HELIUS_RPC_URL, 'confirmed');
-
-    // Fetch all user wallets
-    const userWallets = await UserWallet.find({}).select('username address');
-
-    // Store balances
-    const walletBalances: WalletBalance[] = [];
-
-    // Check balance for each wallet
-    for (const wallet of userWallets) {
-      try {
-        // Convert address to PublicKey
-        const publicKey = new PublicKey(wallet.address);
-
-        // Get SOL balance
-        const balanceLamports = await connection.getBalance(publicKey);
-        const balanceSOL = balanceLamports / LAMPORTS_PER_SOL;
-
-        // Only add wallets with non-zero balance
-        if (balanceSOL > 0) {
-          walletBalances.push({
-            username: wallet.username,
-            address: wallet.address,
-            balance: balanceSOL
-          });
-        }
-      } catch (walletError) {
-        console.error(`Error checking balance for wallet ${wallet.address}:`, walletError);
-      }
-    }
-
-    // Sort balances in descending order
-    walletBalances.sort((a, b) => b.balance - a.balance);
-
-    return walletBalances;
-  } catch (error) {
-    console.error('Error checking user wallet balances:', error);
-    return [];
-  }
-}
-
-// Optional: Add a CLI-friendly function to run this directly
-if (require.main === module) {
-  checkAllUserWalletBalances()
-    .then((balances) => {
-      console.log('Wallets with SOL balances:');
-      balances.forEach((wallet) => {
-        console.log(
-          `Username: ${wallet.username}, Address: ${wallet.address}, Balance: ${wallet.balance} SOL`
-        );
-      });
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error(error);
-      process.exit(1);
-    });
-}

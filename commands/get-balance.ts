@@ -1,5 +1,4 @@
 import UserWallet from '../models/user-wallet.schema';
-import { checkAllUserWalletBalances } from '../utils/helper';
 import { getWalletBalance } from '../utils/wallet-infra';
 
 export default async function getBalance(ctx) {

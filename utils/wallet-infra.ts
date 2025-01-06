@@ -5,7 +5,7 @@ import { transfer } from './helper';
 
 config();
 const apiKey = env.CROSSMINT_API_KEY;
-const connection = new Connection(env.HELIUS_RPC_URL, 'confirmed');
+const connection = new Connection(env.HELIUS_RPC_URL, 'finalized');
 export const SOL_TO_USDC = LAMPORTS_PER_SOL;
 export async function createWallet() {
   // Generate a new keypair
