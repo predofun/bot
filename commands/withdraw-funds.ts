@@ -28,9 +28,11 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
     const address = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
 
     try {
-      const address = ctx.scene.session.withdrawData.address;
-      console.log(address)
-      const pubkey = new PublicKey(address);
+      const recipientAddress = address.trim();
+      if (!PublicKey.isOnCurve(new PublicKey(recipientAddress).toBytes())) {
+        await ctx.reply('❌ Invalid recipient address.');
+        return ctx.scene.leave();
+      }
       ctx.scene.session.withdrawData.address = address;
       await ctx.reply('Enter the amount of SOL to withdraw. Minimum withdrawal is 0.005 SOL:');
       return ctx.wizard.next();
@@ -45,6 +47,7 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
 
     const amount = parseFloat(text);
     const { address } = ctx.scene.session.withdrawData;
+    console.log(address, 'step 3')
 
     if (isNaN(amount) || amount < 0) {
       await ctx.reply('❌ Invalid amount. Please try again with /withdraw');
@@ -59,7 +62,7 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
     try {
       console.log(address)
       const recipient = new PublicKey(address.trim());
-      const user = await UserWallet.findOne({ username: ctx.from?.username }).select('privateKey');
+      const user = await UserWallet.findOne({ username: ctx.from?.username }).select('address privateKey');
 
       if (!user) {
         await ctx.reply('❌ User not found. Please try again with /withdraw');
