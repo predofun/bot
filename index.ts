@@ -148,8 +148,6 @@ bot.on('message', async (ctx) => {
             return joinBet(ctx);
           case 'privatekey':
             return getPrivateKey(ctx);
-
-          // Add this to your bot commands
           case 'resolve':
             if (
               //@ts-ignore
@@ -175,7 +173,6 @@ bot.on('message', async (ctx) => {
     console.error('coming from global natural handler', error);
   }
 });
-
 
 (async () => {
   try {

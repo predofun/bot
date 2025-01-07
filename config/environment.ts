@@ -30,6 +30,8 @@ interface Environment {
   ENCRYPTION_KEY?: string;
 
   EXA_API_KEY?: string;
+
+  OPENROUTER_API_KEY?: string
 }
 
 // Create an object with environment variables
@@ -48,7 +50,8 @@ export const env: Environment = {
   AGENT_WALLET: process.env.AGENT_WALLET || '',
   HELIUS_RPC_URL: `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_RPC_URL}` || '',
   ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || '',
-  EXA_API_KEY: process.env.EXA_API_KEY || ''
+  EXA_API_KEY: process.env.EXA_API_KEY || '',
+  OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || ''
 };
 
 // Optional: Add validation function to ensure critical env vars are present
@@ -63,7 +66,8 @@ export function validateEnvironment() {
     'AGENT_WALLET',
     'HELIUS_RPC_URL',
     'ENCRYPTION_KEY',
-    'EXA_API_KEY'
+    'EXA_API_KEY',
+    'OPENROUTER_API_KEY'
   ];
 
   for (const varName of requiredVars) {
