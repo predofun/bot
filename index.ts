@@ -36,10 +36,6 @@ export interface MyContext extends Context {
 
 // Initialize bot and APIs
 const bot = new Telegraf<MyContext>(env.TELEGRAM_BOT_TOKEN!);
-bot.use(async (ctx, next) => {
-  console.log('incoming request:', ctx);
-  await next();
-});
 
 const stage = new Scenes.Stage<MyContext>([withdrawScene]);
 
