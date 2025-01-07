@@ -154,3 +154,13 @@ export const commands = ['balance', 'fund', 'bet', 'join', 'vote', 'resolve'];
 //     // await mongoose.connection.close();
 //   }
 // }
+
+export const getChatType = (msg) => {
+  const chatType = msg.chat.type;
+
+  return {
+    isGroup: chatType === 'group' || chatType === 'supergroup',
+    isPrivate: chatType === 'private',
+    isChannel: chatType === 'channel'
+  };
+};

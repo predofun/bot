@@ -13,8 +13,9 @@ import getBalance from './commands/get-balance';
 import joinBet from './commands/join-bet';
 import resolveBet from './commands/close-bet';
 import fetchBetHistory from './commands/fetch-bet-history';
-import withdrawScene from './commands/withdraw-funds'
+import withdrawScene from './commands/withdraw-funds';
 import { WizardSessionData } from 'telegraf/typings/scenes';
+import { getChatType } from './utils/helper';
 
 config();
 connectDb();
@@ -35,6 +36,10 @@ export interface MyContext extends Context {
 
 // Initialize bot and APIs
 const bot = new Telegraf<MyContext>(env.TELEGRAM_BOT_TOKEN!);
+bot.use(async (ctx, next) => {
+  console.log('incoming request:', ctx);
+  await next();
+});
 
 const stage = new Scenes.Stage<MyContext>([withdrawScene]);
 
@@ -115,61 +120,87 @@ bot.command('resolve', async (ctx) => {
 
 bot.on('message', async (ctx) => {
   // Check if message contains bot mention
-  const botUsername = ctx.botInfo.username;
-  const mentionRegex = new RegExp(`@${botUsername}`);
-  //@ts-ignore
-  const inputText = ctx.update.message?.text;
-  if (inputText[0] === '/') return;
-  if (ctx.chat.type === 'private' || (mentionRegex.test(inputText) && ctx.chat.type === 'group')) {
-    const input = inputText?.replace(mentionRegex, '').trim();
-    if (input) {
-      const { result: command } = await classifyCommand(input, ctx.chat.type);
-      console.log(command);
-      switch (command) {
-        case 'balance':
-          console.log('getting balance');
-          return getBalance(ctx);
-        // case 'bet':
-        //   console.log('betting');
-        //   return createBet(ctx, ctx.chat.type);
-        // case 'join':
-        //   return joinBet(ctx);
-        // case 'vote':
-        //   return joinBet(ctx);
-        case 'privatekey':
-          return getPrivateKey(ctx);
+  try {
+    console.log('message came in');
+    const botUsername = ctx.botInfo.username;
+    const mentionRegex = new RegExp(`@${botUsername}`);
+    //@ts-ignore
+    const inputText = ctx.update.message?.text;
+    console.log('input text', inputText);
+    const { isGroup, isPrivate, isChannel } = getChatType(ctx);
 
-        // Add this to your bot commands
-        case 'resolve':
-          if (
-            //@ts-ignore
-            ctx.message.reply_to_message &&
-            //@ts-ignore
-            ctx.message.reply_to_message.from?.username === bot.botInfo?.username &&
-            //@ts-ignore
-            ctx.message.reply_to_message.chat.type === 'group'
-          ) {
-            // This is a reply to the bot's message
-            return resolveBet(ctx, ctx.chat.type);
-          }
-        case 'history':
-          return fetchBetHistory(ctx);
-        default:
-          console.log('predo fun reply');
-          const gameInfo = await getPredoGameInfo(input, ctx.from?.username, ctx.chat.type);
-          ctx.reply(gameInfo);
+    if (inputText[0] === '/') return;
+    if (isPrivate || (mentionRegex.test(inputText) && isGroup)) {
+      const input = inputText?.replace(mentionRegex, '').trim();
+      if (input) {
+        const { result: command } = await classifyCommand(input, ctx.chat.type);
+        console.log(command);
+        switch (command) {
+          case 'balance':
+            console.log('getting balance');
+            return getBalance(ctx);
+          case 'bet':
+            console.log('betting');
+            return createBet(ctx, ctx.chat.type);
+          case 'join':
+            return joinBet(ctx);
+          case 'vote':
+            return joinBet(ctx);
+          case 'privatekey':
+            return getPrivateKey(ctx);
+
+          // Add this to your bot commands
+          case 'resolve':
+            if (
+              //@ts-ignore
+              ctx.message.reply_to_message &&
+              //@ts-ignore
+              ctx.message.reply_to_message.from?.username === bot.botInfo?.username &&
+              //@ts-ignore
+              ctx.message.reply_to_message.chat.type === 'group'
+            ) {
+              // This is a reply to the bot's message
+              return resolveBet(ctx, ctx.chat.type);
+            }
+          case 'history':
+            return fetchBetHistory(ctx);
+          default:
+            console.log('predo fun reply');
+            const gameInfo = await getPredoGameInfo(input, ctx.from?.username, ctx.chat.type);
+            ctx.reply(gameInfo);
+        }
       }
     }
+  } catch (error) {
+    console.error('coming from global natural handler', error);
   }
 });
 
-bot.launch().then(() => {
-  // await connectDb();
-  console.info(`The bot ${bot.botInfo.username} is running on server`);
-});
-// Enable graceful stop
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+(async () => {
+  try {
+    console.log('Starting bot...');
+
+    await bot.launch(async () => {
+      console.log('Bot started');
+    });
+
+    // listen for error
+    bot.catch(async () => {
+      // check if bot is still running
+      const me = await bot.telegram.getMe();
+      if (!me) {
+        console.log('Bot is not running. Restarting...');
+
+        bot.launch().catch((err) => {
+          console.error('Error restarting bot:', err);
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error starting bot:', error);
+  }
+})();
 
 process.on('unhandledRejection', (err) => {
   if (err instanceof TelegramError && err.response.error_code === 403) {
