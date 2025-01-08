@@ -58,7 +58,7 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
     }
 
     if (amount < 0.005) {
-      await ctx.reply('❌ Minimum withdrawal amount is 0.005 SOL. Please try again with /withdraw');
+      await ctx.reply('❌ Minimum withdrawal amount is 5 USDC. Please try again with /withdraw');
       return ctx.scene.leave();
     }
 
@@ -81,7 +81,7 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
       const transferTx = await transfer(user.privateKey, recipient, amount);
       console.log(transferTx);
       await ctx.reply(
-        `✅ Successfully withdrew ${amount} SOL to ${address}\nTransaction: https://solscan.io/tx/${transferTx}?cluster=devnet`
+        `✅ Successfully withdrew ${amount} USDC to ${address}\nTransaction: https://solscan.io/tx/${transferTx}?cluster=devnet`
       );
     } catch (error) {
       console.log(error);

@@ -42,7 +42,7 @@ Never:
 Task: Extract these specific bet components:
 - Title: Exact betting subject
 - Options: At least 2 choices
-- MinAmount: In SOL (default 0.01)
+- MinAmount: In USDC (default 0.01)
 - EndTime: ISO 8601 format (default to today if unspecified). The current time is ${getCurrentTime()}`,
 
     commandClassification: `${baseSystemContext}

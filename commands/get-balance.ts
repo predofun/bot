@@ -40,7 +40,7 @@ export default async function getBalance(ctx) {
     ctx.reply(
       `💼 *Bet Wallet Status* 🎯\n\n` +
         `🔑 Address: \`${wallet.address}\`\n` +
-        `💰 Balance: *${balance} SOL*\n\n` +
+        `💰 Balance: *${balance} USDC*\n\n` +
         `${balanceMessages[0]}`,
       {
         parse_mode: 'Markdown'
@@ -48,6 +48,5 @@ export default async function getBalance(ctx) {
     );
   } catch (error) {
     console.log(error);
-    console.log('ok');
   }
 }

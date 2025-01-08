@@ -59,7 +59,7 @@ export default async function createBet(ctx, chatType) {
         `Your epic bet "${bet.title}" is now LIVE! 🔥\n\n` +
         `Bet Details:\n` +
         `└ ID: \`${bet.betId.toLowerCase()}\`\n` +
-        `└ Minimum Stake: ${bet.minAmount} SOL\n` +
+        `└ Minimum Stake: ${bet.minAmount} USDC\n` +
         `└ Ends: ${bet.endTime.toLocaleString()}\n\n` +
         `🤝 Gather your friends, place your bets, and may the smartest bettor win! 💡\n\n` +
         `🔗 Join the bet party: https://t.me/predofun_bot/predofun?startapp=${bet.betId}`

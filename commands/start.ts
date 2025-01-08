@@ -43,7 +43,7 @@ export default async function start(ctx: any) {
         `Your betting journey begins now, ${username}! 🌟\n\n` +
         `🔑 Wallet Created:\n` +
         `└ Address: \`${wallet.address}\`\n\n` +
-        `💰 Starter Balance: ${newWallet.balance} SOL\n` +
+        `💰 Starter Balance: ${newWallet.balance} USDC\n` +
         `Your first step into the world of social betting excitement! 🎲\n\n` +
         `💡 Pro Tip: Use /bet to create your first betting challenge!`
     }

@@ -110,7 +110,7 @@ Example Schema:
 }
 Example Inputs and Outputs:
 Input:
-"@predotest_bot create a bet on the upcoming match between Manchester City and Brentford. Bet amount should be 1 SOL."
+"@predotest_bot create a bet on the upcoming match between Manchester City and Brentford. Bet amount should be 1 USDC."
 Output Query:
 "Manchester City vs Brentford upcoming match details and timing."
 
@@ -120,7 +120,7 @@ Output Query:
 "Bitcoin and Ethereum price trends last week and volatility data."
 
 Input:
-"Create a bet on the winner of the 2024 U.S. Presidential Election. Minimum bet is 0.5 SOL."
+"Create a bet on the winner of the 2024 U.S. Presidential Election. Minimum bet is 0.5 USDC."
 Output Query:
 "2024 U.S. Presidential Election candidates and timeline."`,
       prompt: `${betDetails}`

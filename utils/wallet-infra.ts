@@ -2,11 +2,15 @@ import { config } from 'dotenv';
 import { env } from '../config/environment';
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { transfer } from './helper';
+import { SolanaAgentKit, createSolanaTools } from 'solana-agent-kit';
+import bs58 from 'bs58';
 
 config();
-const apiKey = env.CROSSMINT_API_KEY;
 const connection = new Connection(env.HELIUS_RPC_URL, 'finalized');
 export const SOL_TO_USDC = LAMPORTS_PER_SOL;
+const USDC_MINT_ADDRESS_DEVNET = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
+const USDC_MINT_ADDRESS_MAINNET = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+const USDC_MINT_ADDRESS = env.MODE === 'dev' ? USDC_MINT_ADDRESS_DEVNET : USDC_MINT_ADDRESS_MAINNET;
 export async function createWallet() {
   // Generate a new keypair
   const keypair = Keypair.generate();
@@ -23,11 +27,32 @@ export async function createWallet() {
     balance
   };
 }
-
+function base64ToBS58(base64String) {
+  // First convert base64 to Buffer
+  const buffer = Buffer.from(base64String, 'base64');
+  // Then convert Buffer to base58
+  return bs58.encode(buffer);
+}
 export async function getWalletBalance(walletLocator: string) {
-  const balance = await connection.getBalance(new PublicKey(walletLocator));
-  console.log(balance);
-  if (!balance) return 0;
-  const balanceUsdc = balance / SOL_TO_USDC;
-  return balanceUsdc.toFixed(2);
+  try {
+    const agentWallet = base64ToBS58(Buffer.from(env.AGENT_WALLET, 'base64'));
+    console.log(agentWallet);
+
+    const agent = await setupAgent(agentWallet);
+    const usdcTokenBalance = await agent.getBalanceOther(
+      new PublicKey(walletLocator),
+      USDC_MINT_ADDRESS
+    );
+    if(usdcTokenBalance === null) return 0
+    return usdcTokenBalance;
+  } catch (error) {
+    return 
+  }
+}
+
+export async function setupAgent(privateKey: string) {
+  const agent = new SolanaAgentKit(privateKey, env.HELIUS_RPC_URL, {
+    OPENAI_API_KEY: 'your-api-key'
+  });
+  return agent;
 }
