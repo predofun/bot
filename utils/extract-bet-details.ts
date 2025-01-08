@@ -99,13 +99,13 @@ class BetExtractor {
       }),
       system: `"Analyze the following statement to create a search query that gathers detailed information to construct a structured bet object. Focus on extracting key elements needed for the schema, such as the event or topic (for the title), distinct options for betting, minimum amount (if implied), and relevant timing details (for the end time). Ensure the search query is concise, relevant, and accurately reflects the main subject of the statement.
 
-Statement: '@predotest_bot create a bet on Who will Biden pardon? bet amount should be 1 sol'
+Statement: '@predotest_bot create a bet on Who will Biden pardon? bet amount should be 1 Usdc'
 
 Example Schema:
 {
   "title": "Match: Manchester City vs Brentford",
-  "options": ["Manchester City", "Brentford"],
-  "minAmount": 0.01,
+  "options": ["Manchester City", "Brentford", "Draw"],
+  "minAmount": 1,
   "endTime": "2025-01-10T20:00:00Z"
 }
 Example Inputs and Outputs:
@@ -178,7 +178,7 @@ ${formattedSearchResults}
 Please create a bet object with:
 1. A clear, concise title that captures the essence of the bet
 2. At least two distinct betting options
-3. A reasonable minimum amount (use 0.01 as default if not specified)
+3. A reasonable minimum amount (use 5 as default if not specified)
 4. An appropriate end time based on the event nature (use the current time as reference)
 
 Ensure the end time is appropriate for the type of bet and expressed in ISO format.`;
