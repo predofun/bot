@@ -70,7 +70,11 @@ bot.command('withdraw', (ctx) => ctx.scene.enter('withdraw'));
 bot.command('privatekey', async (ctx) => {
   await getPrivateKey(ctx);
 });
-// Join Command (in group chat)
+
+bot.command('history', async (ctx) => {
+  await fetchBetHistory(ctx);
+});
+
 bot.command('join', async (ctx) => {
   await joinBet(ctx);
 });

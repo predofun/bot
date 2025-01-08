@@ -1,5 +1,6 @@
 import { extractBetDetails } from '../utils/extract-bet-details';
 import Bet from '../models/bet.schema';
+import { DateTime } from 'luxon';
 
 export default async function createBet(ctx, chatType) {
   const input =
@@ -60,7 +61,7 @@ export default async function createBet(ctx, chatType) {
         `Bet Details:\n` +
         `└ ID: \`${bet.betId.toLowerCase()}\`\n` +
         `└ Minimum Stake: ${bet.minAmount} USDC\n` +
-        `└ Ends: ${bet.endTime.toLocaleString()}\n\n` +
+        `└ Ends: ${DateTime.fromJSDate(bet.endTime).toLocaleString(DateTime.DATETIME_FULL)}\n\n` +
         `🤝 Gather your friends, place your bets, and may the smartest bettor win! 💡\n\n` +
         `🔗 Join the bet party: https://t.me/predofun_bot/predofun?startapp=${bet.betId}`
     })
