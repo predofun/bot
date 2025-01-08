@@ -125,7 +125,7 @@ bot.on('message', async (ctx) => {
     console.log('input text', inputText);
     const { isGroup, isPrivate, isChannel } = getChatType(ctx);
 
-    if (inputText[0] === '/') return;
+    if (!inputText || inputText[0] === '/') return;
     if (isPrivate || (mentionRegex.test(inputText) && isGroup)) {
       const input = inputText?.replace(mentionRegex, '').trim();
       if (input) {

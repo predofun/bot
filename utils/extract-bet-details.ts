@@ -2,20 +2,13 @@ import { z } from 'zod';
 import { prompt } from './prompt';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { env } from '../config/environment';
-import search from './openai';
+import search from './perplexity';
 import { getCurrentTime } from './gemini';
 import { generateObject, generateText } from 'ai';
 
 const google = createGoogleGenerativeAI({
   apiKey: env.GEMINI_API_KEY
 });
-
-interface SearchQueryResult {
-  mainQuery: string;
-  fallbackQuery?: string;
-  category: 'sports' | 'crypto' | 'events' | 'other';
-  timeframe: 'immediate' | 'short_term' | 'long_term';
-}
 // Types for our tool system
 type ToolDefinition = {
   name: string;
