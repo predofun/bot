@@ -21,18 +21,24 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
   'withdraw',
   // Step 1: Ask for address
   async (ctx) => {
-    if (ctx.chat.type !== 'private') return;
-    await ctx.reply('Please enter the Solana address to withdraw to:');
-    ctx.scene.session.withdrawData = {} as WithdrawData;
-    return ctx.wizard.next();
+    try {
+      if (ctx.chat.type !== 'private') return;
+      await ctx.reply('Please enter the Solana address to withdraw to:');
+      ctx.scene.session.withdrawData = {} as WithdrawData;
+      return ctx.wizard.next();
+    } catch (error) {
+      console.error('Error in withdraw scene step 1:', error);
+      await ctx.reply('❌ An unexpected error occurred. Please try again with /withdraw');
+      return ctx.scene.leave();
+    }
   },
   // Step 2: Validate address and ask for amount
   async (ctx) => {
-    if (ctx.chat.type !== 'private') return;
-
-    const address = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
-
     try {
+      if (ctx.chat.type !== 'private') return;
+
+      const address = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+
       const recipientAddress = address.trim();
       if (!PublicKey.isOnCurve(new PublicKey(recipientAddress).toBytes())) {
         await ctx.reply('❌ Invalid recipient address.');
@@ -42,30 +48,30 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
       await ctx.reply('Enter the amount of USDC to withdraw. Minimum withdrawal is 5 USDC:');
       return ctx.wizard.next();
     } catch (error) {
+      console.error('Error in withdraw scene step 2:', error);
       await ctx.reply('❌ Invalid Solana address. Please try again with /withdraw');
       return ctx.scene.leave();
     }
   },
   // Step 3: Process withdrawal
   async (ctx) => {
-    if (ctx.chat.type !== 'private') return;
-    const text = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
-
-    const amount = parseFloat(text);
-    const { address } = ctx.scene.session.withdrawData;
-
-    if (isNaN(amount) || amount < 0) {
-      await ctx.reply('❌ Invalid amount. Please try again with /withdraw');
-      return ctx.scene.leave();
-    }
-
-    if (amount < 5) {
-      await ctx.reply('❌ Minimum withdrawal amount is 5 USDC. Please try again with /withdraw');
-      return ctx.scene.leave();
-    }
-
     try {
-      console.log(address);
+      if (ctx.chat.type !== 'private') return;
+      const text = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+
+      const amount = parseFloat(text);
+      const { address } = ctx.scene.session.withdrawData;
+
+      if (isNaN(amount) || amount < 0) {
+        await ctx.reply('❌ Invalid amount. Please try again with /withdraw');
+        return ctx.scene.leave();
+      }
+
+      if (amount < 5) {
+        await ctx.reply('❌ Minimum withdrawal amount is 5 USDC. Please try again with /withdraw');
+        return ctx.scene.leave();
+      }
+
       const recipient = new PublicKey(address.trim());
       const user = await UserWallet.findOne({ username: ctx.from?.username }).select(
         'address privateKey'
@@ -90,8 +96,9 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
         }`
       );
     } catch (error) {
-      console.log(error);
-      await ctx.reply(`❌ Error processing withdrawal. Please try again with /withdraw`);
+      console.error('Error in withdraw scene step 3:', error);
+      await ctx.reply('❌ An unexpected error occurred during withdrawal. Please try again.');
+      return ctx.scene.leave();
     }
 
     return ctx.scene.leave();

@@ -46,6 +46,9 @@ export default async function getBalance(ctx) {
       }
     );
   } catch (error) {
-    console.log(error);
+    console.error('Error in getBalance:', error);
+    ctx.reply(
+      `❌ An unexpected error occurred while fetching your balance. Please try again later.`
+    );
   }
 }
