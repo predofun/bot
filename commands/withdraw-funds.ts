@@ -38,7 +38,7 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
         return ctx.scene.leave();
       }
       ctx.scene.session.withdrawData.address = address;
-      await ctx.reply('Enter the amount of SOL to withdraw. Minimum withdrawal is 0.005 SOL:');
+      await ctx.reply('Enter the amount of USDC to withdraw. Minimum withdrawal is 5 USDC:');
       return ctx.wizard.next();
     } catch (error) {
       await ctx.reply('❌ Invalid Solana address. Please try again with /withdraw');

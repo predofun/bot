@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import UserWallet from './user-wallet.schema';
+import { bot } from '..';
 
 interface IBet extends Document {
   betId: string;
@@ -35,7 +36,6 @@ const Bet = mongoose.model<IBet>('Bet', BetSchema);
 BetSchema.post('findOneAndUpdate', async function (doc) {
   const bet = await Bet.findById(this.getQuery()._id);
   if (!bet) return;
-  const bot = require('../index').bot;
   const userWallet = await UserWallet.findById(bet.participants[bet.participants.length - 1]);
   if (!userWallet) return;
   const message = `🎉 New bet alert! 🎉\n${userWallet.username} has made a bet on "${bet.title}"! 🤔\nWill it be ${bet.options[0]} or ${bet.options[1]}? 🤷‍♂️\nPlace your bets! 🎲`;
