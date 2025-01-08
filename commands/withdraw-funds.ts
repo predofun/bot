@@ -10,7 +10,8 @@ import { MyContext } from '../index';
 import UserWallet from '../models/user-wallet.schema';
 import { transfer } from '../utils/helper';
 import { env } from '../config/environment';
-import { transferUSDC } from '../utils/wallet-infra';
+import { getWalletBalance, transferUSDC } from '../utils/wallet-infra';
+import { sponsorTransferUSDC } from '../utils/solana';
 
 interface WithdrawData {
   address: string;
@@ -58,15 +59,17 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
       return ctx.scene.leave();
     }
 
-    if (amount < 0.005) {
+    if (amount < 5) {
       await ctx.reply('❌ Minimum withdrawal amount is 5 USDC. Please try again with /withdraw');
       return ctx.scene.leave();
     }
 
     try {
-      console.log(address)
+      console.log(address);
       const recipient = new PublicKey(address.trim());
-      const user = await UserWallet.findOne({ username: ctx.from?.username }).select('address privateKey');
+      const user = await UserWallet.findOne({ username: ctx.from?.username }).select(
+        'address privateKey'
+      );
 
       if (!user) {
         await ctx.reply('❌ User not found. Please try again with /withdraw');
@@ -74,15 +77,17 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
       }
       const connection = new Connection(env.HELIUS_RPC_URL, 'confirmed');
       const userAddress = new PublicKey(user.address);
-      const userBalance = (await connection.getBalance(userAddress)) / LAMPORTS_PER_SOL;
+      const userBalance = await getWalletBalance(userAddress.toBase58());
       if (userBalance < amount) {
         await ctx.reply(`❌ Insufficient balance. Please try again with /withdraw`);
         return ctx.scene.leave();
       }
-      const transferTx = await transferUSDC(user.privateKey, recipient, amount);
+      const transferTx = await sponsorTransferUSDC(user.privateKey, recipient, amount);
       console.log(transferTx);
       await ctx.reply(
-        `✅ Successfully withdrew ${amount} USDC to ${address}\nTransaction: https://solscan.io/tx/${transferTx}?cluster=devnet`
+        `✅ Successfully withdrew ${amount} USDC to ${address}\nTransaction: https://solscan.io/tx/${transferTx}?cluster=${
+          env.MODE == 'dev' ? 'devnet' : 'mainnet-beta'
+        }`
       );
     } catch (error) {
       console.log(error);

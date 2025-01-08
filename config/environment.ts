@@ -34,6 +34,8 @@ interface Environment {
   OPENROUTER_API_KEY?: string
 
   MODE: string
+
+  FEE_PAYER: string
   
 }
 
@@ -55,6 +57,7 @@ export const env: Environment = {
   ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || '',
   EXA_API_KEY: process.env.EXA_API_KEY || '',
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
+  FEE_PAYER: process.env.FEE_PAYER || '',
   MODE: process.env.MODE || 'dev'
 };
 
@@ -72,6 +75,7 @@ export function validateEnvironment() {
     'ENCRYPTION_KEY',
     'EXA_API_KEY',
     'OPENROUTER_API_KEY',
+    'FEE_PAYER',
     'MODE'
   ];
 

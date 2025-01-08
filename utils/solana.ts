@@ -6,18 +6,21 @@ import {
   createAssociatedTokenAccountInstruction
 } from '@solana/spl-token';
 import bs58 from 'bs58';
-
+import { env } from '../config/environment';
+const USDC_MINT_ADDRESS_DEVNET = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
+const USDC_MINT_ADDRESS_MAINNET = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+const USDC_MINT_ADDRESS = env.MODE === 'dev' ? USDC_MINT_ADDRESS_DEVNET : USDC_MINT_ADDRESS_MAINNET;
 class SolanaUSDCTransfer {
-  connection: Connection
-  feePayer: Keypair
-  usdcMint: PublicKey
+  connection: Connection;
+  feePayer: Keypair;
+  usdcMint: PublicKey;
   constructor(
-    endpoint = 'https://api.mainnet-beta.solana.com',
-    feePayerPrivateKey: string // Uint8Array of private key
+    endpoint = env.HELIUS_RPC_URL,
+    feePayerPrivateKey = env.FEE_PAYER // Uint8Array of private key
   ) {
-    this.connection = new Connection(endpoint, 'confirmed');
+    this.connection = new Connection(endpoint, 'finalized');
     this.feePayer = Keypair.fromSecretKey(bs58.decode(feePayerPrivateKey));
-    this.usdcMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // Mainnet USDC
+    this.usdcMint = USDC_MINT_ADDRESS; // Mainnet USDC
   }
 
   async getOrCreateAssociatedTokenAccount(walletAddress) {
@@ -119,34 +122,34 @@ class SolanaUSDCTransfer {
 }
 
 // Example usage
-async function example() {
+export async function sponsorTransferUSDC(
+  senderPrivateKey: string,
+  recipient: PublicKey,
+  amount: number
+) {
   // Initialize with your fee payer private key
-  const feePayerPrivateKey = 'new Uint8Array(/* Your private key bytes */);'
-  const transfer = new SolanaUSDCTransfer(
-    'https://api.mainnet-beta.solana.com',
-    feePayerPrivateKey
-  );
+  const feePayerPrivateKey = env.FEE_PAYER;
+  const transfer = new SolanaUSDCTransfer(env.HELIUS_RPC_URL, feePayerPrivateKey);
 
   // Example transfer
-  const sender = new PublicKey('sender_wallet_address');
-  const recipient = new PublicKey('recipient_wallet_address');
-  const senderKeypair = Keypair.fromSecretKey(bs58.decode('ssksksk'));
+  const senderKeypair = Keypair.fromSecretKey(bs58.decode(senderPrivateKey));
 
   try {
     // Check sender's balance first
-    const balance = await transfer.getUSDCBalance(sender);
+    const balance = await transfer.getUSDCBalance(senderKeypair.publicKey);
     console.log(`Current USDC balance: ${balance}`);
 
     // Perform transfer
     const result = await transfer.transferUSDC(
-      sender,
+      senderKeypair.publicKey,
       recipient,
-      1.5, // Transfer 1.5 USDC
+      amount, // Transfer 1.5 USDC
       senderKeypair
     );
 
     if (result.success) {
       console.log(`Transfer successful! Signature: ${result.signature}`);
+      return result.signature;
     } else {
       console.error(`Transfer failed: ${result.error}`);
     }

@@ -24,7 +24,6 @@ export default async function getBalance(ctx) {
       );
       return;
     }
-
     const balance = Number(await getWalletBalance(wallet.address));
 
     // Fun balance messages with different tones based on balance
