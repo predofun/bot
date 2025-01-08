@@ -10,6 +10,7 @@ import { MyContext } from '../index';
 import UserWallet from '../models/user-wallet.schema';
 import { transfer } from '../utils/helper';
 import { env } from '../config/environment';
+import { transferUSDC } from '../utils/wallet-infra';
 
 interface WithdrawData {
   address: string;
@@ -78,7 +79,7 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
         await ctx.reply(`❌ Insufficient balance. Please try again with /withdraw`);
         return ctx.scene.leave();
       }
-      const transferTx = await transfer(user.privateKey, recipient, amount);
+      const transferTx = await transferUSDC(user.privateKey, recipient, amount);
       console.log(transferTx);
       await ctx.reply(
         `✅ Successfully withdrew ${amount} USDC to ${address}\nTransaction: https://solscan.io/tx/${transferTx}?cluster=devnet`

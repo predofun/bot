@@ -1,7 +1,6 @@
 import { config } from 'dotenv';
 import { env } from '../config/environment';
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
-import { transfer } from './helper';
 import { SolanaAgentKit, createSolanaTools } from 'solana-agent-kit';
 import bs58 from 'bs58';
 
@@ -43,10 +42,10 @@ export async function getWalletBalance(walletLocator: string) {
       new PublicKey(walletLocator),
       USDC_MINT_ADDRESS
     );
-    if(usdcTokenBalance === null) return 0
+    if (usdcTokenBalance === null) return 0;
     return usdcTokenBalance;
   } catch (error) {
-    return 
+    console.error('Error from getting wallet balance', error)
   }
 }
 
@@ -55,4 +54,18 @@ export async function setupAgent(privateKey: string) {
     OPENAI_API_KEY: 'your-api-key'
   });
   return agent;
+}
+
+export async function transferUSDC(from: string, to: PublicKey, amount: number) {
+  // Transfer SPL token
+try {
+    const fromWallet = base64ToBS58(Buffer.from(from, 'base64'));
+    console.log(fromWallet);
+
+    const agent = await setupAgent(fromWallet);
+    const signature = await agent.transfer(to, amount, USDC_MINT_ADDRESS);
+    return signature;
+} catch (error) {
+  console.error('Error from transferring USDC', error)
+}
 }
