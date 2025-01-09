@@ -137,20 +137,13 @@ export class SolanaService {
         // The signature is available directly in the error object
         const txSignature = error.signature;
 
-        // Or we could parse it from the error message if needed
-        const messageMatch = error.message.match(/Check signature (\w+)/);
-        const messageSignature = messageMatch ? messageMatch[1] : null;
+        if (txSignature) {
+          await this.confirmTransaction(this.connection, txSignature);
 
-        // Use the signature from error object (more reliable) or message
-        const finalSignature = txSignature || messageSignature;
-
-        if (finalSignature) {
-          await this.confirmTransaction(this.connection, signature);
-
-          console.log('Transaction sent with signature:', finalSignature);
+          console.log('Transaction sent with signature:', txSignature);
           return {
             success: false,
-            signature: finalSignature,
+            signature: txSignature,
             error: error.message,
             message:
               'Transaction sent but confirmation timed out. Please check signature on Solana Explorer.'
