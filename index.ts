@@ -54,7 +54,7 @@ bot.use(async (ctx, next) => {
     isGroup &&
     (inputText?.startsWith('/bet') || mentionRegex.test(inputText)) &&
     //@ts-ignore
-    ctx.update.message.chat != -1002307021492
+    ctx.update.message.chat.id != -1002307021492
   ) {
     return ctx.reply('Bot is disabled till launch');
   } else {
