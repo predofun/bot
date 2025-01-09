@@ -27,16 +27,17 @@ interface Environment {
 
   AGENT_WALLET?: string;
 
+  AGENT_ADDRESS?: string;
+
   ENCRYPTION_KEY?: string;
 
   EXA_API_KEY?: string;
 
-  OPENROUTER_API_KEY?: string
+  OPENROUTER_API_KEY?: string;
 
-  MODE: string
+  MODE: string;
 
-  FEE_PAYER: string
-  
+  FEE_PAYER: string;
 }
 
 // Create an object with environment variables
@@ -53,7 +54,11 @@ export const env: Environment = {
   CROSSMINT_API_KEY: process.env.CROSSMINT_API_KEY || '',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   AGENT_WALLET: process.env.AGENT_WALLET || '',
-  HELIUS_RPC_URL: `https://${process.env.MODE === 'dev' ? 'devnet' : 'mainnet'}.helius-rpc.com/?api-key=${process.env.HELIUS_RPC_URL}` || '',
+  AGENT_ADDRESS: process.env.AGENT_ADDRESS || '',
+  HELIUS_RPC_URL:
+    process.env.MODE === 'dev'
+      ? `https://devnet.helius-rpc.com/?api-key=${process.env.HELIUS_RPC_URL}`
+      : `http://basic.rpc.solanavibestation.com/?api_key=${process.env.PAID_RPC}`,
   ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || '',
   EXA_API_KEY: process.env.EXA_API_KEY || '',
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
@@ -71,6 +76,7 @@ export function validateEnvironment() {
     'CROSSMINT_API_KEY',
     'GEMINI_API_KEY',
     'AGENT_WALLET',
+    'AGENT_ADDRESS',
     'HELIUS_RPC_URL',
     'ENCRYPTION_KEY',
     'EXA_API_KEY',

@@ -79,40 +79,6 @@ bot.command('join', async (ctx) => {
   await joinBet(ctx);
 });
 
-// Vote Command
-bot.command('vote', async (ctx) => {
-  if (ctx.chat.type === 'private') return;
-
-  const username = ctx.from?.username;
-  if (!username) {
-    ctx.reply('Please set a username in Telegram to use this bot.');
-    return;
-  }
-
-  const [betId, optionIndex] = ctx.message.text.split('/vote')[1].trim().split(' ');
-  const bet = await Bet.findOne({ betId });
-  if (!bet) {
-    ctx.reply('Invalid bet ID.');
-    return;
-  }
-
-  if (!bet.participants.includes(username)) {
-    ctx.reply('You have not joined this bet.');
-    return;
-  }
-
-  const option = parseInt(optionIndex);
-  if (isNaN(option) || option < 0 || option >= bet.options.length) {
-    ctx.reply('Invalid option.');
-    return;
-  }
-
-  //   bet.votes.set(username, option);
-  await bet.save();
-
-  ctx.reply(`Your vote for "${bet.options[option]}" has been recorded.`);
-});
-
 // Resolve Command
 bot.command('resolve', async (ctx) => {
   await resolveBet(ctx, ctx.chat.type);
