@@ -56,7 +56,7 @@ bot.use(async (ctx, next) => {
     //@ts-ignore
     ctx.update.message.chat.id != -1002307021492
   ) {
-    return ctx.reply('Bot is disabled till launch');
+    return ctx.reply('Betting is disabled till launch');
   } else {
     await next();
   }
