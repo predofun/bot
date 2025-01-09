@@ -125,21 +125,38 @@ export class SolanaService {
       transaction.sign(senderKeypair, this.feePayer);
 
       const rawTransaction = transaction.serialize();
+      let signature;
+      try {
+        signature = await sendAndConfirmRawTransaction(this.connection, rawTransaction, {
+          skipPreflight: false,
+          preflightCommitment: 'confirmed',
+          commitment: 'confirmed',
+          maxRetries: 10
+        });
+      } catch (error) {
+        // The signature is available directly in the error object
+        const txSignature = error.signature;
 
-      const signature = await sendAndConfirmRawTransaction(this.connection, rawTransaction, {
-        skipPreflight: false,
-        preflightCommitment: 'processed',
-        maxRetries: 10,
-        commitment: 'confirmed',
-      });
+        // Or we could parse it from the error message if needed
+        const messageMatch = error.message.match(/Check signature (\w+)/);
+        const messageSignature = messageMatch ? messageMatch[1] : null;
 
-      await this.confirmTransaction(this.connection, signature);
+        // Use the signature from error object (more reliable) or message
+        const finalSignature = txSignature || messageSignature;
 
-      return {
-        success: true,
-        signature,
-        message: `Successfully transferred ${amount} USDC.`
-      };
+        if (finalSignature) {
+          console.log('Transaction sent with signature:', finalSignature);
+          return {
+            success: false,
+            signature: finalSignature,
+            error: error.message,
+            message:
+              'Transaction sent but confirmation timed out. Please check signature on Solana Explorer.'
+          };
+        }
+
+        throw error; // Re-throw if we couldn't get the signature
+      }
     } catch (error) {
       console.error('Transfer failed:', error.message);
       return { success: false, error: error.message };
