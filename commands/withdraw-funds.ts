@@ -89,11 +89,13 @@ const withdrawScene = new Scenes.WizardScene<MyContext>(
         return ctx.scene.leave();
       }
       const transferTx = await sponsorTransferUSDC(user.privateKey, recipient, amount);
-      console.log(transferTx);
+      ctx
+        .replyWithChatAction('typing')
+        .then(() => ctx.reply(`🎲 Processing Bet Creation Request... ⏳`));
       await ctx.reply(
-        `✅ Successfully withdrew ${amount} USDC to ${address}\nTransaction: https://solscan.io/tx/${transferTx}?cluster=${
-          env.MODE == 'dev' ? 'devnet' : 'mainnet-beta'
-        }`
+        `✅ Successfully withdrew ${amount} USDC to ${address}\nTransaction: https://solscan.io/tx/${
+          transferTx.signature
+        }?cluster=${env.MODE == 'dev' ? 'devnet' : 'mainnet-beta'}`
       );
     } catch (error) {
       console.error('Error in withdraw scene step 3:', error);

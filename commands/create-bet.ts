@@ -26,7 +26,9 @@ export default async function createBet(ctx, chatType) {
       );
       return;
     }
-
+    ctx
+      .replyWithChatAction('typing')
+      .then(() => ctx.reply(`🎲 Processing Bet Creation Request... ⏳`));
     const betDetails = await extractBetDetails(input, chatType);
     console.log(betDetails);
 
