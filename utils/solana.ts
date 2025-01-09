@@ -145,6 +145,8 @@ export class SolanaService {
         const finalSignature = txSignature || messageSignature;
 
         if (finalSignature) {
+          await this.confirmTransaction(this.connection, signature);
+
           console.log('Transaction sent with signature:', finalSignature);
           return {
             success: false,
@@ -157,6 +159,11 @@ export class SolanaService {
 
         throw error; // Re-throw if we couldn't get the signature
       }
+      return {
+        success: true,
+        signature,
+        message: `Successfully transferred ${amount} USDC.`
+      };
     } catch (error) {
       console.error('Transfer failed:', error.message);
       return { success: false, error: error.message };
