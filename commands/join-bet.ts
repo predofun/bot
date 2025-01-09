@@ -2,6 +2,8 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import UserWallet from '../models/user-wallet.schema';
 import Bet from '../models/bet.schema';
 import { env } from '../config/environment';
+import { sponsorTransferUSDC } from '../utils/solana';
+import { extractBetIdFromText } from '../utils/gemini';
 
 const solanaConnection = new Connection(env.HELIUS_RPC_URL!);
 
@@ -19,13 +21,39 @@ export default async function joinBet(ctx: any) {
       return;
     }
 
-    const betId = ctx.message.text.split('/join')[1].trim();
-    const bet = await Bet.findOne({ betId });
+    const betId =
+      ctx.message.text.split('/join')[1].trim() ||
+      ctx.message.text.split(`@predofun_bot`)[1]?.trim() ||
+      ctx.message.text.trim();
+    const betIdRegex = /^pre-[a-zA-Z0-9]{5,15}$/;
+    let extractedBetId;
+    if (betIdRegex.test(betId)) {
+      const bet = await Bet.findOne({ betId });
+      if (!bet) {
+        ctx.reply(
+          `🔍 Bet Search Says: Bet Not Found! 🔮\n\n` +
+            `The bet ID you entered seems to be a valid bet ID, but it's not in our records. \n` +
+            `Please double-check your bet ID and try again! 🔍`
+        );
+        return;
+      }
+    } else {
+      extractedBetId = await extractBetIdFromText(betId);
+      if (!extractedBetId) {
+        ctx.reply(
+          `🕵️ Bet Detective Says: Invalid Bet Format! 🚨\n\n` +
+            `The text you entered does not match the format of a valid bet ID. \n` +
+            `Please enter a valid bet ID and try again! 🔍`
+        );
+        return;
+      }
+    }
+    const bet = await Bet.findOne({ betId: extractedBetId });
     if (!bet) {
       ctx.reply(
-        `🕵️ Bet Detective Says: Invalid Bet! 🚨\n\n` +
-          `The bet ID you entered seems to have vanished into the bet void. \n` +
-          `Double-check your bet ID and try again! 🔍`
+        `🔍 Bet Search Says: Bet Not Found! 🔮\n\n` +
+          `The bet ID you mentioned from your request was not found in our records. \n` +
+          `Please double-check your bet ID and try again! 🔍`
       );
       return;
     }
@@ -52,13 +80,28 @@ export default async function joinBet(ctx: any) {
       return;
     }
 
-    // Deduct bet amount and add user to participants
-    //   await crossmint.transfer({
-    //     amount: bet.minAmount,
-    //     from: wallet.address,
-    //     to: process.env.BOT_WALLET_ADDRESS!,
-    //     tokenId: 'usdc'
-    //   });
+    const existingParticipant = bet.participants.find((participant) => participant === username);
+    if (existingParticipant) {
+      ctx.reply(
+        `🤝 You've already joined this bet! 🎯\n\n` +
+          `Your bet action is already heating up! 🔥\n\n` +
+          `Current Participants: ${bet.participants.length}\n` +
+          `Bet Action Level: 🔥🔥🔥`
+      );
+      return;
+    }
+
+    const betAmount = bet.minAmount;
+    const transferResult = await sponsorTransferUSDC(
+      wallet.privateKey,
+      new PublicKey(env.AGENT_ADDRESS),
+      betAmount
+    );
+    ctx.reply(`Adding ${ctx.from?.username} to the bet...`);
+    if (!transferResult.success) {
+      ctx.reply(`❌ An unexpected error occurred while joining the bet. Please try again later.`);
+      return;
+    }
 
     bet.participants.push(username);
     await bet.save();

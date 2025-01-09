@@ -43,6 +43,18 @@ export async function classifyCommand(input: string, chatType) {
   return object;
 }
 
+export async function extractBetIdFromText(input: string) {
+  const { object } = await generateObject({
+    model: google('gemini-2.0-flash-exp', { useSearchGrounding: true }),
+    schema: z.object({
+      betId: z.string().nullable()
+    }),
+    system: prompt('private').betIdExtraction,
+    prompt: input
+  });
+  return object.betId;
+}
+
 export async function resolveBetWithAI(
   bet: {
     title: string;
@@ -68,6 +80,8 @@ export async function resolveBetWithAI(
   const correctOption = object;
   return correctOption;
 }
+
+
 
 export async function getPredoGameInfo(query: string, username, chatType) {
   // If no predefined response, use Gemini for an ultra-concise answer
