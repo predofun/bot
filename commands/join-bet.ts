@@ -4,6 +4,7 @@ import Bet from '../models/bet.schema';
 import { env } from '../config/environment';
 import { sponsorTransferUSDC } from '../utils/solana';
 import { extractBetIdFromText } from '../utils/gemini';
+import { getWalletBalance } from '../utils/wallet-infra';
 
 const solanaConnection = new Connection(env.HELIUS_RPC_URL!);
 
@@ -21,12 +22,16 @@ export default async function joinBet(ctx: any) {
       return;
     }
 
+    const botUsername = '@' + ctx.botInfo?.username;
+    console.log(botUsername);
     const betId =
-      ctx.message.text.split('/join')[1].trim() ||
-      ctx.message.text.split(`@predofun_bot`)[1]?.trim() ||
+      ctx.message.text.split('/join')[1]?.trim() ||
+      ctx.message.text.split(botUsername)[1]?.trim() ||
       ctx.message.text.trim();
-    const betIdRegex = /^pre-[a-zA-Z0-9]{5,15}$/;
+    const betIdRegex = /^pre-/;
+
     let extractedBetId;
+
     if (betIdRegex.test(betId)) {
       const bet = await Bet.findOne({ betId });
       if (!bet) {
@@ -58,7 +63,7 @@ export default async function joinBet(ctx: any) {
       return;
     }
 
-    const wallet = await UserWallet.findOne({ username });
+    const wallet = await UserWallet.findOne({ username }).select('address privateKey');
     if (!wallet) {
       ctx.reply(
         `💼 Wallet Missing in Action! 🚫\n\n` +
@@ -68,7 +73,7 @@ export default async function joinBet(ctx: any) {
       return;
     }
 
-    const balance = await solanaConnection.getBalance(new PublicKey(wallet.address));
+    const balance = await getWalletBalance(wallet.address);
     if (balance < bet.minAmount) {
       ctx.reply(
         `💸 Insufficient Funds Alert! 🚨\n\n` +
@@ -80,7 +85,7 @@ export default async function joinBet(ctx: any) {
       return;
     }
 
-    const existingParticipant = bet.participants.find((participant) => participant === username);
+    const existingParticipant = bet.participants.find((participant) => participant === wallet._id);
     if (existingParticipant) {
       ctx.reply(
         `🤝 You've already joined this bet! 🎯\n\n` +

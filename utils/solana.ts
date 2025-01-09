@@ -65,6 +65,32 @@ export class SolanaService {
       throw new Error(`Error creating associated token account: ${error.message}`);
     }
   }
+  async confirmTransaction(
+    connection: Connection,
+    signature: string,
+    maxRetries = 5,
+    retryDelay = 5000
+  ) {
+    for (let i = 0; i < maxRetries; i++) {
+      const status = await connection.getSignatureStatus(signature);
+      console.log('Signature status:', status);
+
+      if (
+        status?.value?.confirmationStatus === 'confirmed' ||
+        status?.value?.confirmationStatus === 'finalized'
+      ) {
+        return true;
+      }
+
+      if (status?.value?.err) {
+        throw new Error(`Transaction failed: ${JSON.stringify(status.value.err)}`);
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    }
+
+    throw new Error('Transaction confirmation timeout');
+  }
 
   async transferUSDC(
     fromWallet: PublicKey,
@@ -102,8 +128,12 @@ export class SolanaService {
 
       const signature = await sendAndConfirmRawTransaction(this.connection, rawTransaction, {
         skipPreflight: false,
-        preflightCommitment: 'processed'
+        preflightCommitment: 'processed',
+        maxRetries: 10,
+        commitment: 'confirmed',
       });
+
+      await this.confirmTransaction(this.connection, signature);
 
       return {
         success: true,

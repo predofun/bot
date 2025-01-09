@@ -35,7 +35,6 @@ function base64ToBS58(base64String) {
 export async function getWalletBalance(walletLocator: string) {
   try {
     const agentWallet = base64ToBS58(Buffer.from(env.AGENT_WALLET, 'base64'));
-    console.log(agentWallet);
 
     const agent = await setupAgent(agentWallet);
     const usdcTokenBalance = await agent.getBalanceOther(
@@ -50,6 +49,7 @@ export async function getWalletBalance(walletLocator: string) {
 }
 
 export async function setupAgent(privateKey: string) {
+  console.log(env.HELIUS_RPC_URL)
   const agent = new SolanaAgentKit(privateKey, env.HELIUS_RPC_URL, {
     OPENAI_API_KEY: 'your-api-key'
   });

@@ -87,12 +87,10 @@ bot.command('resolve', async (ctx) => {
 bot.on('message', async (ctx) => {
   // Check if message contains bot mention
   try {
-    console.log('message came in');
     const botUsername = ctx.botInfo.username;
     const mentionRegex = new RegExp(`@${botUsername}`);
     //@ts-ignore
     const inputText = ctx.update.message?.text;
-    console.log('input text', inputText);
     const { isGroup, isPrivate, isChannel } = getChatType(ctx);
 
     if (!inputText || inputText[0] === '/') return;
@@ -109,8 +107,6 @@ bot.on('message', async (ctx) => {
             console.log('betting');
             return createBet(ctx, ctx.chat.type);
           case 'join':
-            return joinBet(ctx);
-          case 'vote':
             return joinBet(ctx);
           case 'privatekey':
             return getPrivateKey(ctx);
