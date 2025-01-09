@@ -1,155 +1,162 @@
-import { Connection, PublicKey, Transaction, SystemProgram, Keypair } from '@solana/web3.js';
+import {
+  Connection,
+  PublicKey,
+  Transaction,
+  SystemProgram,
+  Keypair,
+  ComputeBudgetProgram,
+  sendAndConfirmRawTransaction
+} from '@solana/web3.js';
 import {
   TOKEN_PROGRAM_ID,
   createTransferInstruction,
   getAssociatedTokenAddress,
-  createAssociatedTokenAccountInstruction
+  createAssociatedTokenAccountInstruction,
+  ASSOCIATED_TOKEN_PROGRAM_ID
 } from '@solana/spl-token';
 import bs58 from 'bs58';
 import { env } from '../config/environment';
+
 const USDC_MINT_ADDRESS_DEVNET = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
 const USDC_MINT_ADDRESS_MAINNET = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+
 const USDC_MINT_ADDRESS = env.MODE === 'dev' ? USDC_MINT_ADDRESS_DEVNET : USDC_MINT_ADDRESS_MAINNET;
-class SolanaUSDCTransfer {
+
+export class SolanaService {
   connection: Connection;
   feePayer: Keypair;
   usdcMint: PublicKey;
-  constructor(
-    endpoint = env.HELIUS_RPC_URL,
-    feePayerPrivateKey = env.FEE_PAYER // Uint8Array of private key
-  ) {
-    this.connection = new Connection(endpoint, 'finalized');
+
+  constructor(endpoint = env.HELIUS_RPC_URL, feePayerPrivateKey = env.FEE_PAYER) {
+    this.connection = new Connection(endpoint, 'processed');
     this.feePayer = Keypair.fromSecretKey(bs58.decode(feePayerPrivateKey));
-    this.usdcMint = USDC_MINT_ADDRESS; // Mainnet USDC
+    this.usdcMint = USDC_MINT_ADDRESS;
   }
 
-  async getOrCreateAssociatedTokenAccount(walletAddress) {
+  async getOrCreateAssociatedTokenAccount(walletAddress: PublicKey) {
     const associatedTokenAddress = await getAssociatedTokenAddress(this.usdcMint, walletAddress);
 
     try {
       const account = await this.connection.getAccountInfo(associatedTokenAddress);
-
       if (!account) {
         const transaction = new Transaction().add(
           createAssociatedTokenAccountInstruction(
             this.feePayer.publicKey,
             associatedTokenAddress,
             walletAddress,
-            this.usdcMint
+            this.usdcMint,
+            TOKEN_PROGRAM_ID,
+            ASSOCIATED_TOKEN_PROGRAM_ID
           )
         );
 
-        const signature = await this.connection.sendTransaction(transaction, [this.feePayer]);
-
-        await this.connection.confirmTransaction(signature);
+        const signature = await sendAndConfirmRawTransaction(
+          this.connection,
+          transaction.serialize(),
+          {
+            skipPreflight: true,
+            preflightCommitment: 'processed'
+          }
+        );
+        console.log('Created associated token account:', signature);
       }
-
       return associatedTokenAddress;
     } catch (error) {
-      throw new Error(`Error creating token account: ${error.message}`);
+      throw new Error(`Error creating associated token account: ${error.message}`);
     }
   }
 
   async transferUSDC(
-    fromWallet, // PublicKey of sender
-    toWallet, // PublicKey of recipient
-    amount, // Amount in USDC (e.g., 1.5 for 1.50 USDC)
-    senderKeypair // For signing the token transfer
+    fromWallet: PublicKey,
+    toWallet: PublicKey,
+    amount: number,
+    senderKeypair: Keypair
   ) {
     try {
-      // Convert amount to USDC units (6 decimals)
       const tokenAmount = Math.floor(amount * 1_000_000);
-
-      // Get or create associated token accounts
       const [fromTokenAccount, toTokenAccount] = await Promise.all([
         this.getOrCreateAssociatedTokenAccount(fromWallet),
         this.getOrCreateAssociatedTokenAccount(toWallet)
       ]);
 
-      // Create transfer instruction
       const transferInstruction = createTransferInstruction(
         fromTokenAccount,
         toTokenAccount,
         fromWallet,
-        tokenAmount,
-        [senderKeypair],
-        TOKEN_PROGRAM_ID
+        tokenAmount
       );
 
-      // Create and sign transaction
-      const transaction = new Transaction().add(transferInstruction);
+      const transaction = new Transaction().add(
+        ComputeBudgetProgram.setComputeUnitLimit({ units: 300_000 }),
+        transferInstruction
+      );
 
-      // Set fee payer
       transaction.feePayer = this.feePayer.publicKey;
 
-      // Get recent blockhash
-      const { blockhash } = await this.connection.getLatestBlockhash();
-      transaction.recentBlockhash = blockhash;
+      const latestBlockhash = await this.connection.getLatestBlockhash('processed');
+      transaction.recentBlockhash = latestBlockhash.blockhash;
 
-      // Sign transaction
-      transaction.sign(this.feePayer, senderKeypair);
+      transaction.sign(senderKeypair, this.feePayer);
 
-      // Send transaction
-      const signature = await this.connection.sendRawTransaction(transaction.serialize());
+      const rawTransaction = transaction.serialize();
 
-      // Confirm transaction
-      await this.connection.confirmTransaction(signature);
+      const signature = await sendAndConfirmRawTransaction(this.connection, rawTransaction, {
+        skipPreflight: false,
+        preflightCommitment: 'processed'
+      });
 
       return {
         success: true,
         signature,
-        message: `Transferred ${amount} USDC successfully`
+        message: `Successfully transferred ${amount} USDC.`
       };
     } catch (error) {
-      return {
-        success: false,
-        error: error.message
-      };
+      console.error('Transfer failed:', error.message);
+      return { success: false, error: error.message };
     }
   }
 
-  // Utility method to check USDC balance
-  async getUSDCBalance(walletAddress) {
+  async getUSDCBalance(walletAddress: string) {
     try {
-      const tokenAccount = await getAssociatedTokenAddress(this.usdcMint, walletAddress);
+      const address = new PublicKey(walletAddress);
+      const tokenAccount = await getAssociatedTokenAddress(this.usdcMint, address);
 
       const balance = await this.connection.getTokenAccountBalance(tokenAccount);
-      return parseFloat(balance.value.amount) / 1_000_000; // Convert to USDC
+      return parseFloat(balance.value.amount) / 1_000_000;
     } catch (error) {
       throw new Error(`Error checking balance: ${error.message}`);
     }
   }
 }
 
-// Example usage
 export async function sponsorTransferUSDC(
   senderPrivateKey: string,
   recipient: PublicKey,
   amount: number
 ) {
-  // Initialize with your fee payer private key
   const feePayerPrivateKey = env.FEE_PAYER;
-  const transfer = new SolanaUSDCTransfer(env.HELIUS_RPC_URL, feePayerPrivateKey);
+  const transfer = new SolanaService(env.HELIUS_RPC_URL, feePayerPrivateKey);
 
-  // Example transfer
   const senderKeypair = Keypair.fromSecretKey(bs58.decode(senderPrivateKey));
 
   try {
-    // Check sender's balance first
-    const balance = await transfer.getUSDCBalance(senderKeypair.publicKey);
+    const balance = await transfer.getUSDCBalance(senderKeypair.publicKey.toBase58());
     console.log(`Current USDC balance: ${balance}`);
 
-    // Perform transfer
+    if (balance < amount) {
+      throw new Error('Insufficient USDC balance for the transaction.');
+    }
+
     const result = await transfer.transferUSDC(
       senderKeypair.publicKey,
       recipient,
-      amount, // Transfer 1.5 USDC
+      amount,
       senderKeypair
     );
 
     if (result.success) {
       console.log(`Transfer successful! Signature: ${result.signature}`);
-      return result.signature;
+      return result;
     } else {
       console.error(`Transfer failed: ${result.error}`);
     }
