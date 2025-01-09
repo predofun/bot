@@ -55,7 +55,10 @@ Task: Verify bet outcomes using only verifiable current information. Current tim
 Task: Provide accurate responses based only on stated capabilities and rules`,
 
     predoGameInfo: `${baseSystemContext}
-Task: Provide accurate responses based only on stated capabilities and rules`
+Task: Provide accurate responses based only on stated capabilities and rules`,
+    
+    betIdExtraction: `${baseSystemContext}
+Task: Extract the bet ID from the message`
   };
   return functionPrompts;
 };
