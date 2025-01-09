@@ -44,7 +44,7 @@ interface Environment {
 console.log(process.env.MODE);
 export const env: Environment = {
   TELEGRAM_BOT_TOKEN:
-    process.env.MODE === 'dev'
+    process.env.MODE === 'prod'
       ? process.env.TELEGRAM_BOT_TOKEN_PROD!
       : process.env.TELEGRAM_BOT_TOKEN_DEV!,
   SOLANA_NETWORK: process.env.SOLANA_NETWORK || 'devnet',
