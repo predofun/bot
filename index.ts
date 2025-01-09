@@ -44,6 +44,24 @@ const stage = new Scenes.Stage<MyContext>([withdrawScene]);
 bot.use(session());
 bot.use(stage.middleware());
 
+bot.use(async (ctx, next) => {
+  //@ts-ignore
+  const inputText = ctx.update?.message?.text;
+  const mentionRegex = new RegExp(`@${bot.botInfo?.username}( |$)`);
+  console.log();
+  const { isGroup, isPrivate, isChannel } = getChatType(ctx);
+  if (
+    isGroup &&
+    (inputText?.startsWith('/bet') || mentionRegex.test(inputText)) &&
+    //@ts-ignore
+    ctx.update.message.chat != -1002307021492
+  ) {
+    return ctx.reply('Bot is disabled till launch');
+  } else {
+    await next();
+  }
+});
+
 bot.catch((err, ctx) => {
   if (err instanceof TelegramError && err.response.error_code === 403) {
     console.error('User blocked the bot:', err);

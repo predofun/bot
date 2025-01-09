@@ -65,7 +65,6 @@ export const env: Environment = {
   FEE_PAYER: process.env.FEE_PAYER || '',
   MODE: process.env.MODE || 'dev'
 };
-
 // Optional: Add validation function to ensure critical env vars are present
 export function validateEnvironment() {
   const requiredVars: (keyof Environment)[] = [
