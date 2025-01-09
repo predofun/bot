@@ -13,6 +13,7 @@ import getBalance from './commands/get-balance';
 import joinBet from './commands/join-bet';
 import resolveBet from './commands/close-bet';
 import fetchBetHistory from './commands/fetch-bet-history';
+import getOngoingBets from './commands/fetch-group-bet-history';
 import withdrawScene from './commands/withdraw-funds';
 import { WizardSessionData } from 'telegraf/typings/scenes';
 import { getChatType } from './utils/helper';
@@ -73,6 +74,10 @@ bot.command('privatekey', async (ctx) => {
 
 bot.command('history', async (ctx) => {
   await fetchBetHistory(ctx);
+});
+
+bot.command('grouphistory', async (ctx) => {
+  await getOngoingBets(ctx);
 });
 
 bot.command('join', async (ctx) => {
