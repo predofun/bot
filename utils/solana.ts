@@ -129,7 +129,7 @@ export class SolanaService {
       try {
         signature = await sendAndConfirmRawTransaction(this.connection, rawTransaction, {
           skipPreflight: false,
-          preflightCommitment: 'confirmed',
+          preflightCommitment: 'processed',
           commitment: 'confirmed',
           maxRetries: 10
         });
