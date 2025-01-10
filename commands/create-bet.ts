@@ -50,7 +50,7 @@ export default async function createBet(ctx, chatType) {
       title: betDetails.title,
       options: betDetails.options,
       image: betImages[Math.floor(Math.random() * betImages.length)],
-      minAmount: betDetails.minAmount,
+      minAmount: betDetails.minAmount < 1 ? 1 : betDetails.minAmount,
       creatorId: ctx.from.id?.toString() || '',
       endTime: new Date(betDetails.endTime)
     };
