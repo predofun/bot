@@ -8,7 +8,7 @@ export default async function createBet(ctx, chatType) {
       ctx.message.text.split('/bet')[1]?.trim() ||
       ctx.message.text.split(`@predofun_bot`)[1]?.trim() ||
       ctx.message.text.trim();
-
+    console.log('from bet creation', input);
     if (!input) {
       ctx.reply(
         `🎲 Bet Challenge Awaits! 🚀\n\n` +

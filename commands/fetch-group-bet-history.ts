@@ -17,7 +17,7 @@ export default async function getOngoingBets(ctx: any) {
       groupId: ctx.chat.id,
       endTime: { $gt: new Date() }, // Bets with end time in the future
       resolved: { $ne: true } // Not yet resolved
-    }).sort({ endTime: 1 }); // Sort by earliest ending first
+    }).sort({ endTime: 1 }).limit(10) // Sort by earliest ending first
 
     if (ongoingBets.length === 0) {
       ctx.reply(
