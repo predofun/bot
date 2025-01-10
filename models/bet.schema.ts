@@ -15,6 +15,7 @@ interface IBet extends Document {
   chatId: string;
   resolved: boolean;
   pollId?: string;
+  creatorId: string;
 }
 
 const BetSchema: Schema = new Schema(
@@ -26,6 +27,7 @@ const BetSchema: Schema = new Schema(
     groupId: { type: String, required: true },
     endTime: { type: Date, required: true },
     participants: { type: [mongoose.Schema.Types.ObjectId], default: [] },
+    creatorId: { type: String, required: true },
     votes: { type: Map, of: Number, default: {} },
     image: { type: String },
     chatId: { type: String, required: true },
