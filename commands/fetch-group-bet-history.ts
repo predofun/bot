@@ -38,7 +38,7 @@ export default async function getOngoingBets(ctx: any) {
           `   └ Options: ${bet.options.join(' | ')}\n` +
           `   └ Minimum Stake: ${bet.minAmount} USDC\n` +
           `   └ Ends: ${endTime.toLocaleString(DateTime.DATETIME_FULL)}\n` +
-          `   └ [Bet Link](https://t.me/predofun_bot?start=${bet.betId})\n` +
+          `   └ [Bet Link](https://t.me/predofun_bot/predofun?startapp=${bet.betId})\n` +
           `   └ Votes: ${bet.votes ? Object.keys(bet.votes).length : 0}\n` +
           `   └ Participants: ${bet.participants?.length || 0}\n\n`
         );
