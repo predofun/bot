@@ -48,7 +48,6 @@ bot.use(async (ctx, next) => {
   //@ts-ignore
   const inputText = ctx.update?.message?.text;
   const mentionRegex = new RegExp(`@${bot.botInfo?.username}( |$)`);
-  console.log();
   const { isGroup, isPrivate, isChannel } = getChatType(ctx);
   if (
     isGroup &&
