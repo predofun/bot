@@ -16,6 +16,8 @@ interface IBet extends Document {
   resolved: boolean;
   pollId?: string;
   creatorId: string;
+  winner?: string;
+  transactionHash?: string;
 }
 
 const BetSchema: Schema = new Schema(
@@ -32,7 +34,9 @@ const BetSchema: Schema = new Schema(
     image: { type: String },
     chatId: { type: String, required: true },
     resolved: { type: Boolean, default: false },
-    pollId: { type: String }
+    pollId: { type: String },
+    winner: { type: String },
+    transactionHash: { type: String }
   },
   { timestamps: true }
 );
@@ -41,14 +45,26 @@ const BetSchema: Schema = new Schema(
 BetSchema.post('findOneAndUpdate', async function (doc) {
   try {
     const bet = await Bet.findById(this.getQuery()._id);
-    if (!bet || bet.participants.length === 0) return;
+    const update = this.getUpdate() as any;
+    if (!bet || !update.$push || !update.$push.participants) return;
 
-    const userWallet = await UserWallet.findById(bet.participants[bet.participants.length - 1]);
+    const newParticipantId = update.$push.participants;
+    const userWallet = await UserWallet.findById(newParticipantId);
     if (!userWallet) return;
 
-    const message =
-      `🎉 New bet alert! 🎉\n${userWallet.username} has made a bet on "${bet.title}"! 🤔\n` +
-      `Will it be ${bet.options[0]} or ${bet.options[1]}? 🤷‍♂️\nPlace your bets! 🎲`;
+    const optionsString = bet.options.map((option, index) => `${index + 1}. ${option}`).join('\n');
+    const message = `
+🎉 New bet participant! 🎉
+${userWallet.username} has joined the bet "${bet.title}"!
+
+Options:
+${optionsString}
+
+💰 Minimum bet: ${bet.minAmount} USDC
+⏰ Ends: ${bet.endTime.toLocaleString()}
+
+Join now with /join ${bet.betId}
+`;
 
     await bot.telegram.sendMessage(bet.groupId, message);
   } catch (error) {

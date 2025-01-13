@@ -5,24 +5,30 @@ import search from './perplexity';
 import { getCurrentTime } from './gemini';
 import { generateObject } from 'ai';
 
+// Create a Google Generative AI instance with the API key
 const google = createGoogleGenerativeAI({
   apiKey: env.GEMINI_API_KEY
 });
 
-class BetProcessor {
+// Define a class to process and resolve bets
+export class BetProcessor {
+  // Method to search for real-time information about the bet
   private async searchBetOutcome(bet: { title: string; options: string[] }) {
-    const searchQuery = `Resolve the outcome of the bet titled: "${
-      bet.title
-    }". Options are: ${bet.options.join(', ')}`;
+    // Construct a search query using the bet title and options
+    const searchQuery = `Resolve the outcome of the bet titled: "${bet.title}". Options are: ${bet.options.join(', ')}`;
+    // Perform the search and get the search results
     const searchResults = await search(searchQuery);
+    // Return the content of the first search result
     return searchResults.choices[0].message.content;
   }
 
+  // Method to process search results using AI
   private async processSearchResultsWithAI(
     bet: { title: string; options: string[] },
     searchResults: string,
     currentTime: string
   ) {
+    // Construct an enhanced prompt using the search results, bet details, and current time
     const enhancedPrompt = `
       A bet needs resolution. Use the provided search results, bet details, and current time to determine the outcome.
 
@@ -41,6 +47,7 @@ class BetProcessor {
       3. If no valid outcome is found, respond with -1 and explain why.
     `;
 
+    // Use the AI model to generate an object with the correct option and reason
     const { object } = await generateObject({
       model: google('gemini-2.0-flash-exp'),
       schema: z.object({
@@ -53,9 +60,11 @@ class BetProcessor {
       prompt: enhancedPrompt
     });
 
+    // Return the generated object
     return object;
   }
 
+  // Public method to resolve a bet
   public async resolveBet(bet: {
     title: string;
     options: string[];
@@ -75,6 +84,7 @@ class BetProcessor {
         currentTime
       );
 
+      // Return the resolved outcome
       return resolvedOutcome;
     } catch (error) {
       console.error('Error resolving bet:', error);
@@ -83,17 +93,24 @@ class BetProcessor {
   }
 }
 
-export async function processBet(betDetails: {
+// Export a function to resolve a bet using AI
+export async function resolveWithAI(bet: {
   title: string;
   options: string[];
   votes: Record<string, number>;
-}) {
+}): Promise<{ option: number; reason: string }> {
   const processor = new BetProcessor();
 
   try {
-    const resolvedBet = await processor.resolveBet(betDetails);
+    // Resolve the bet using the processor
+    const resolvedBet = await processor.resolveBet(bet);
     console.log('Resolved Bet Outcome:', resolvedBet);
-    return resolvedBet;
+
+    // Return the resolved bet outcome with the correct option and reason
+    return {
+      option: resolvedBet.result,
+      reason: resolvedBet.reason
+    };
   } catch (error) {
     console.error('Error resolving bet:', error);
     throw error;

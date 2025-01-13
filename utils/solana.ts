@@ -112,19 +112,23 @@ export class SolanaService {
         tokenAmount
       );
 
-      const transaction = new Transaction().add(
-        ComputeBudgetProgram.setComputeUnitLimit({ units: 300_000 }),
-        transferInstruction
-      );
+      const transaction = new Transaction().add(transferInstruction);
+      const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 500000
+      });
+
+      transaction.add(addPriorityFee);
 
       transaction.feePayer = this.feePayer.publicKey;
 
-      const latestBlockhash = await this.connection.getLatestBlockhash('processed');
+      const latestBlockhash = await this.connection.getLatestBlockhash('confirmed');
+
       transaction.recentBlockhash = latestBlockhash.blockhash;
 
       transaction.sign(senderKeypair, this.feePayer);
 
       const rawTransaction = transaction.serialize();
+
       let signature;
       try {
         signature = await sendAndConfirmRawTransaction(this.connection, rawTransaction, {
@@ -175,6 +179,12 @@ export class SolanaService {
     }
   }
 }
+export function base64ToBS58(base64String) {
+  // First convert base64 to Buffer
+  const buffer = Buffer.from(base64String, 'base64');
+  // Then convert Buffer to base58
+  return bs58.encode(buffer);
+}
 
 export async function sponsorTransferUSDC(
   senderPrivateKey: string,
@@ -184,7 +194,18 @@ export async function sponsorTransferUSDC(
   const feePayerPrivateKey = env.FEE_PAYER;
   const transfer = new SolanaService(env.HELIUS_RPC_URL, feePayerPrivateKey);
 
-  const senderKeypair = Keypair.fromSecretKey(bs58.decode(senderPrivateKey));
+  let senderKeypair;
+  try {
+    senderKeypair = Keypair.fromSecretKey(bs58.decode(senderPrivateKey));
+  } catch (error) {
+    try {
+      console.log('Key is Base64');
+      senderKeypair = Keypair.fromSecretKey(bs58.decode(base64ToBS58(senderPrivateKey)));
+    } catch (error) {
+      console.log('from decoding Keypair', error);
+      console.log('Private Key is corrupt');
+    }
+  }
 
   try {
     const balance = await transfer.getUSDCBalance(senderKeypair.publicKey.toBase58());

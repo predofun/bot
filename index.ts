@@ -17,6 +17,8 @@ import getOngoingBets from './commands/fetch-group-bet-history';
 import withdrawScene from './commands/withdraw-funds';
 import { WizardSessionData } from 'telegraf/typings/scenes';
 import { getChatType } from './utils/helper';
+import { handleBetResolutionCallback } from './commands/handle-bet-resolution';
+import { BetResolverService } from './utils/scheduler';
 
 config();
 connectDb();
@@ -43,6 +45,15 @@ const stage = new Scenes.Stage<MyContext>([withdrawScene]);
 // Add session and stage middleware
 bot.use(session());
 bot.use(stage.middleware());
+
+// Initialize and start the bet resolver service
+const betResolver = new BetResolverService();
+betResolver.start();
+
+// Handle bet resolution callbacks
+bot.action(/^(accept_resolution|reject_resolution|vote):.+$/, async (ctx) => {
+  await handleBetResolutionCallback(ctx);
+});
 
 // bot.use(async (ctx, next) => {
 //   //@ts-ignore
