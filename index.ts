@@ -55,23 +55,6 @@ bot.action(/^(accept_resolution|reject_resolution|vote):.+$/, async (ctx) => {
   await handleBetResolutionCallback(ctx);
 });
 
-// bot.use(async (ctx, next) => {
-//   //@ts-ignore
-//   const inputText = ctx.update?.message?.text;
-//   const mentionRegex = new RegExp(`@${bot.botInfo?.username}( |$)`);
-//   const { isGroup, isPrivate, isChannel } = getChatType(ctx);
-//   if (
-//     isGroup &&
-//     (inputText?.startsWith('/bet') || mentionRegex.test(inputText)) &&
-//     //@ts-ignore
-//     ctx.update.message.chat.id != -1002307021492
-//   ) {
-//     return ctx.reply('Betting is disabled till launch');
-//   } else {
-//     await next();
-//   }
-// });
-
 bot.catch((err, ctx) => {
   if (err instanceof TelegramError && err.response.error_code === 403) {
     console.error('User blocked the bot:', err);

@@ -6,7 +6,7 @@ export default async function createBet(ctx, chatType) {
   try {
     const input =
       ctx.message.text.split('/bet')[1]?.trim() ||
-      ctx.message.text.split(`@predofun_bot`)[1]?.trim();
+      ctx.message.text.split(`@${ctx.botInfo.username}`)[1]?.trim();
     console.log('from bet creation', input);
     if (!input) {
       ctx.reply(
