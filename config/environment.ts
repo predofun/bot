@@ -58,7 +58,7 @@ export const env: Environment = {
   HELIUS_RPC_URL:
     process.env.MODE === 'dev'
       ? `https://devnet.helius-rpc.com/?api-key=${process.env.HELIUS_RPC_URL}`
-      : `http://basic.rpc.solanavibestation.com/?api_key=${process.env.PAID_RPC}`,
+      : `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_RPC_URL}`,
   ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || '',
   EXA_API_KEY: process.env.EXA_API_KEY || '',
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',

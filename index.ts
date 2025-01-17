@@ -47,7 +47,7 @@ bot.use(session());
 bot.use(stage.middleware());
 
 // Initialize and start the bet resolver service
-const betResolver = new BetResolverService();
+// const betResolver = new BetResolverService();
 // betResolver.start();
 
 // Handle bet resolution callbacks
