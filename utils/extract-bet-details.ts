@@ -4,7 +4,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { env } from '../config/environment';
 import search from './perplexity';
 import { getCurrentTime } from './gemini';
-import { generateObject, generateText } from 'ai';
+import { generateObject } from 'ai';
 
 const google = createGoogleGenerativeAI({
   apiKey: env.GEMINI_API_KEY

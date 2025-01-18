@@ -19,6 +19,7 @@ import { WizardSessionData } from 'telegraf/typings/scenes';
 import { getChatType } from './utils/helper';
 import { handleBetResolutionCallback } from './commands/handle-bet-resolution';
 import { BetResolverService } from './utils/scheduler';
+import { getStats } from './commands/get-stats';
 
 config();
 connectDb();
@@ -143,7 +144,9 @@ bot.on('message', async (ctx) => {
           default:
             console.log('predo fun reply');
             const gameInfo = await getPredoGameInfo(input, ctx.from?.username, ctx.chat.type);
-            ctx.reply(gameInfo);
+            ctx.reply(gameInfo, {
+              parse_mode: 'Markdown',
+            });
         }
       }
     }
