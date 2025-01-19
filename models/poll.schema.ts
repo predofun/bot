@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IPoll {
+export interface IPoll extends Document {
   betId: mongoose.Types.ObjectId;
   pollMessageId: string;
   groupId: string;
@@ -8,6 +8,9 @@ export interface IPoll {
   createdAt: Date;
   resolved: boolean;
   aiOption?: number; // The option suggested by AI
+  processingStarted?: Date;
+  processingLock?: string;
+  isManualPoll: boolean;
 }
 
 const pollSchema = new mongoose.Schema<IPoll>({
@@ -17,8 +20,14 @@ const pollSchema = new mongoose.Schema<IPoll>({
   votes: { type: Map, of: Number, default: new Map() },
   createdAt: { type: Date, default: Date.now },
   resolved: { type: Boolean, default: false },
-  aiOption: { type: Number }
+  aiOption: { type: Number },
+  processingStarted: { type: Date },
+  processingLock: { type: String },
+  isManualPoll: { type: Boolean, required: true, default: false }
 });
+
+// Add index for processing lock and timeout
+pollSchema.index({ processingLock: 1, processingStarted: 1 });
 
 const Poll = mongoose.model<IPoll>('Poll', pollSchema);
 export default Poll;

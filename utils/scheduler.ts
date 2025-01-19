@@ -9,6 +9,7 @@ import { env } from '../config/environment';
 import { payoutQueue, pollQueue } from './queue';
 import Poll from '../models/poll.schema';
 import { resolveWithAI } from './resolve-bet';
+import mongoose from 'mongoose';
 
 export class BetResolverService {
   private cronJob: CronJob;
@@ -34,7 +35,7 @@ export class BetResolverService {
         participants: { $exists: true, $ne: [] } // Ensure there's at least one participant
       });
 
-      console.log('Amount of bets:', expiredBets)
+      console.log('Amount of bets:', expiredBets.length);
 
       for (const bet of expiredBets) {
         await this.processBetResolution(bet);
@@ -58,6 +59,37 @@ export class BetResolverService {
       // Try to resolve with AI first
       const aiResolution = await resolveWithAI(bet);
 
+      if (aiResolution.option === -1) {
+        // Create a Telegram poll for manual resolution
+        const message = await this.predoBot.telegram.sendPoll(
+          bet.groupId,
+          `📊 Vote for the correct outcome of bet "${bet.title}"`,
+          bet.options,
+          {
+            is_anonymous: false,
+            allows_multiple_answers: false,
+            open_period: 3 * 60 * 60 // 3 hours in seconds
+          }
+        );
+
+        // Create a poll entry to track the resolution
+        await Poll.create({
+          betId: bet._id,
+          pollMessageId: message.message_id.toString(),
+          groupId: bet.groupId,
+          createdAt: new Date(),
+          isManualPoll: true
+        });
+
+        // Schedule a check after 3 hours
+        await pollQueue.add(
+          'finalize-resolution',
+          { betId: bet._id },
+          { delay: 3 * 60 * 60 * 1000 }
+        );
+        return;
+      }
+
       // Create buttons for accepting/rejecting AI resolution
       const buttons = [
         [
@@ -72,7 +104,7 @@ export class BetResolverService {
       // Send resolution message with buttons
       const message = await this.predoBot.telegram.sendMessage(
         bet.groupId,
-        `🤖 AI Resolution for bet "${bet.title}"\n\n` +
+        `🤖 Predo's Resolution for bet "${bet.title}"\n\n` +
           `Selected Option: ${bet.options[aiResolution.option]}\n` +
           `Reason: ${aiResolution.reason}\n\n` +
           `Please vote to accept or reject this resolution.`,
@@ -87,11 +119,11 @@ export class BetResolverService {
         createdAt: new Date()
       });
 
-      // Schedule a check after 24 hours
+      // Schedule a check after 3 hours
       await pollQueue.add(
         'finalize-resolution',
         { betId: bet._id },
-        { delay: 24 * 60 * 60 * 1000 }
+        { delay: 3 * 60 * 60 * 1000 }
       );
     } catch (error) {
       console.error('Error processing bet resolution:', error);
@@ -132,7 +164,8 @@ export class BetResolverService {
             bet,
             winners,
             winningOption: poll.aiOption,
-            payoutPerWinner
+            payoutPerWinner,
+            session: null
           });
         }
       } else {
@@ -172,25 +205,74 @@ export class BetResolverService {
   }
 
   public async processPollResults(betId: string) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
-      const bet = await Bet.findById(betId);
-      const poll = await Poll.findOne({ betId, resolved: false });
+      // Generate a unique lock ID
+      const lockId = new mongoose.Types.ObjectId().toString();
+      const now = new Date();
+      const lockTimeout = new Date(now.getTime() - 5 * 60 * 1000); // 5 minutes timeout
 
-      if (!bet || !poll) return;
+      // Try to acquire lock
+      const poll = await Poll.findOneAndUpdate(
+        {
+          betId,
+          resolved: false,
+          $or: [
+            { processingLock: { $exists: false } },
+            { processingStarted: { $lt: lockTimeout } }
+          ]
+        },
+        {
+          $set: {
+            processingLock: lockId,
+            processingStarted: now
+          }
+        },
+        { session, new: true }
+      );
 
-      // Count votes for each option
-      const voteCounts = new Map();
-      for (const vote of poll.votes.values()) {
-        voteCounts.set(vote, (voteCounts.get(vote) || 0) + 1);
+      if (!poll) {
+        await session.abortTransaction();
+        session.endSession();
+        console.log('Poll is already being processed or does not exist');
+        return;
       }
 
-      // Find winning option
+      const bet = await Bet.findById(betId).session(session);
+      if (!bet) {
+        await session.abortTransaction();
+        session.endSession();
+        return;
+      }
+
       let winningOption = 0;
-      let maxVotes = 0;
-      for (const [option, count] of voteCounts.entries()) {
-        if (count > maxVotes) {
-          maxVotes = count;
-          winningOption = Number(option);
+
+      if (poll.isManualPoll) {
+        // For manual polls, get the poll results from Telegram
+        try {
+          const pollResults = await this.predoBot.telegram.stopPoll(poll.groupId, poll.pollMessageId);
+          const maxVotes = Math.max(...pollResults.options.map(opt => opt.voter_count));
+          winningOption = pollResults.options.findIndex(opt => opt.voter_count === maxVotes);
+        } catch (error) {
+          console.error('Error getting poll results:', error);
+          throw error;
+        }
+      } else {
+        // Count votes for AI resolution acceptance/rejection
+        const voteCounts = new Map();
+        for (const vote of poll.votes.values()) {
+          voteCounts.set(vote, (voteCounts.get(vote) || 0) + 1);
+        }
+
+        // Find winning option
+        let maxVotes = 0;
+        for (const [option, count] of voteCounts.entries()) {
+          if (count > maxVotes) {
+            maxVotes = count;
+            winningOption = Number(option);
+          }
         }
       }
 
@@ -199,35 +281,54 @@ export class BetResolverService {
         (participant) => bet.votes.get(participant.toString()) === winningOption
       );
 
+      const totalPrizePool = bet.minAmount * bet.participants.length;
+      const platformFee = totalPrizePool * 0.045; // 4.5% platform fee
+      const netPrizePool = totalPrizePool - platformFee;
+      let payoutPerWinner = 0;
+
       if (winners.length > 0) {
-        const totalPrizePool = bet.minAmount * bet.participants.length;
-        const payoutPerWinner = totalPrizePool / winners.length;
+        payoutPerWinner = netPrizePool / winners.length;
 
-        await payoutQueue.add('multi-payout', {
-          bet,
-          winners,
-          winningOption,
-          payoutPerWinner
-        });
-
-        await this.predoBot.telegram.sendMessage(
-          bet.groupId,
-          `🎉 Poll results for "${bet.title}"\n\n` +
-            `Winning option: ${bet.options[winningOption]}\n` +
-            `Number of winners: ${winners.length}\n` +
-            `Payout per winner: ${payoutPerWinner} USDC`
+        await payoutQueue.add(
+          'multi-payout',
+          {
+            bet,
+            winners,
+            winningOption,
+            payoutPerWinner,
+            platformFee,
+            session
+          }
         );
       }
 
       // Mark poll as resolved
       poll.resolved = true;
-      await poll.save();
+      await poll.save({ session });
+
+      // Mark bet as resolved
+      bet.resolved = true;
+      bet.winner = bet.options[winningOption];
+      await bet.save({ session });
+
+      // Commit transaction
+      await session.commitTransaction();
+      session.endSession();
+
+      // Send resolution message
+      await this.predoBot.telegram.sendMessage(
+        bet.groupId,
+        `🎯 Bet "${bet.title}" has been resolved!\n\n` +
+          `Winning Option: ${bet.options[winningOption]}\n` +
+          `Number of Winners: ${winners.length}\n` +
+          `Platform Fee: ${platformFee.toFixed(2)} USDC (4.5%)\n` +
+          `Payout per Winner: ${payoutPerWinner.toFixed(2)} USDC`
+      );
     } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
       console.error('Error in processPollResults:', error);
+      throw error;
     }
   }
 }
-
-// app.ts
-const betResolver = new BetResolverService();
-betResolver.start();
