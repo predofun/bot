@@ -92,6 +92,7 @@ export async function handleBetResolutionCallback(ctx: Context) {
       const rejectPercentage = totalVotes > 0 ? (rejects / totalVotes) * 100 : 0;
 
       messageText = `🤖 AI Resolution for "${bet.title}"\n\n` +
+        `AI's Choice: ${bet.options[poll.aiOption!]}\n\n` +
         `Current Results:\n` +
         `✅ Accept: ${accepts} votes (${acceptPercentage.toFixed(1)}%)\n` +
         `❌ Reject: ${rejects} votes (${rejectPercentage.toFixed(1)}%)\n\n` +

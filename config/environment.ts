@@ -38,6 +38,8 @@ interface Environment {
   MODE: string;
 
   FEE_PAYER: string;
+
+  REVENUE_WALLET: string;
 }
 
 // Create an object with environment variables
@@ -63,6 +65,7 @@ export const env: Environment = {
   EXA_API_KEY: process.env.EXA_API_KEY || '',
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
   FEE_PAYER: process.env.FEE_PAYER || '',
+  REVENUE_WALLET: process.env.REVENUE_WALLET || '',
   MODE: process.env.MODE || 'dev'
 };
 // Optional: Add validation function to ensure critical env vars are present
@@ -80,6 +83,7 @@ export function validateEnvironment() {
     'ENCRYPTION_KEY',
     'EXA_API_KEY',
     'OPENROUTER_API_KEY',
+    'REVENUE_WALLET',
     'FEE_PAYER',
     'MODE'
   ];

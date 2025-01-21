@@ -1,5 +1,5 @@
 import Queue from 'bull';
-import { Connection, PublicKey } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import { env } from '../config/environment';
 import { sponsorTransferUSDC } from './solana';
 import UserWallet from '../models/user-wallet.schema';
@@ -44,7 +44,6 @@ export const pollQueue = new Queue('poll-processing', {
 
 // Process single participant refunds
 payoutQueue.process('single-refund', async (job) => {
-  console.log(job.data);
   const { bet, participant } = job.data;
 
   try {
@@ -89,62 +88,83 @@ payoutQueue.process('single-refund', async (job) => {
 });
 
 // Process multi-participant payouts
-// payoutQueue.process('multi-payout', async (job) => {
-//   const { bet, winners, winningOption, payoutPerWinner } = job.data;
+payoutQueue.process('multi-payout', async (job) => {
+  const { bet, winners, winningOption, payoutPerWinner, platformFee, session } = job.data;
 
-//   try {
-//     const payoutResults = [];
+  try {
+    const payoutResults = [];
 
-//     // Process winners sequentially to avoid rate limits
-//     for (const winner of winners) {
-//       const wallet = await UserWallet.findById(winner).select('address');
-//       if (!wallet) {
-//         throw new Error(`Winner wallet not found for user ${winner}`);
-//       }
+    // Process winners sequentially to avoid rate limits
+    for (const winner of winners) {
+      const wallet = await UserWallet.findById(winner).select('address').session(session);
+      if (!wallet) {
+        throw new Error(`Winner wallet not found for user ${winner}`);
+      }
 
-//       const payoutResult = await sponsorTransferUSDC(
-//         env.AGENT_WALLET,
-//         new PublicKey(wallet.address),
-//         payoutPerWinner
-//       );
+      const payoutResult = await sponsorTransferUSDC(
+        env.AGENT_WALLET,
+        new PublicKey(wallet.address),
+        payoutPerWinner
+      );
 
-//       if (!payoutResult?.success) {
-//         throw new Error(`Failed to process payout for winner ${winner}`);
-//       }
+      if (!payoutResult?.success) {
+        throw new Error(`Failed to process payout for winner ${winner}`);
+      }
 
-//       payoutResults.push(payoutResult);
-//     }
+      payoutResults.push(payoutResult);
+    }
 
-//     await Bet.findByIdAndUpdate(bet._id, {
-//       resolved: true,
-//       winner: winners[0],
-//       transactionHash: payoutResults[0].signature
-//     });
+    // Transfer platform fee
+    if (platformFee > 0) {
+      const platformResult = await sponsorTransferUSDC(
+        env.AGENT_WALLET,
+        new PublicKey(env.REVENUE_WALLET),
+        platformFee
+      );
 
-//     await bot.telegram.sendMessage(
-//       bet.groupId,
-//       `🎯 Bet "${bet.title}" resolved!\nWinning Option: ${
-//         bet.options[winningOption]
-//       }\nWinners: ${winners
-//         .map((w) => `@${w}`)
-//         .join(', ')}\nPayout per winner: ${payoutPerWinner} USDC\nTransaction: ${
-//         payoutResults[0].signature
-//       }`
-//     );
+      if (!platformResult?.success) {
+        throw new Error('Failed to process platform fee');
+      } 
 
-//     return { success: true, signature: payoutResults[0].signature };
-//   } catch (error) {
-//     console.error('Error processing multi-participant payout:', error);
-//     throw error;
-//   }
-// });
+      payoutResults.push(platformResult);
+    }
 
-// // Process poll results
-// pollQueue.process('process-poll-results', async (job) => {
-//   const { betId } = job.data;
-//   const betResolver = new BetResolverService();
-//   await betResolver.processPollResults(betId);
-// });
+    await Bet.findByIdAndUpdate(bet._id, {
+      resolved: true,
+      winner: bet.options[winningOption],
+      transactionHash: payoutResults[0].signature
+    }).session(session);
+
+    await bot.telegram.sendMessage(
+      bet.groupId,
+      `🎯 Bet "${bet.title}" resolved!\n` +
+      `Winning Option: ${bet.options[winningOption]}\n` +
+      `Winners: ${winners.map((w) => `@${w}`).join(', ')}\n` +
+      `Platform Fee: ${platformFee.toFixed(2)} USDC (4.5%)\n` +
+      `Payout per Winner: ${payoutPerWinner.toFixed(2)} USDC\n` +
+      `Transaction: ${payoutResults[0].signature}`
+    );
+
+    return { success: true, signature: payoutResults[0].signature };
+  } catch (error) {
+    console.error('Error processing multi-participant payout:', error);
+    throw error;
+  }
+});
+
+// Process poll results
+pollQueue.process('process-poll-results', async (job) => {
+  const { betId } = job.data;
+  const betResolver = new BetResolverService();
+  await betResolver.processPollResults(betId);
+});
+
+// Process finalize resolution
+pollQueue.process('finalize-resolution', async (job) => {
+  const { betId } = job.data;
+  const betResolver = new BetResolverService();
+  await betResolver.finalizeResolution(betId);
+});
 
 // Handle failed jobs
 payoutQueue.on('failed', async (job, error) => {

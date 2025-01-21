@@ -13,9 +13,42 @@ const google = createGoogleGenerativeAI({
 // Define a class to process and resolve bets
 export class BetProcessor {
   // Method to search for real-time information about the bet
-  private async searchBetOutcome(bet: { title: string; options: string[] }) {
+  private async searchBetOutcome(bet: { title: string; options: string[] }, currentTime: string) {
     // Construct a search query using the bet title and options
-    const searchQuery = `Resolve the outcome of the bet titled: "${bet.title}". Options are: ${bet.options.join(', ')}`;
+    const searchQuery = `
+"Given a bet query ${bet.title} with the bet details:
+      Bet Details:
+      - Title: ${bet.title}
+      - Options:
+      ${bet.options.map((option, index) => `${index}: ${option}`).join('\n')}
+      - Current Time: ${currentTime}
+, convert it into a verification query that follows these templates:
+
+For cryptocurrency prices:
+'What was X's exact price across major exchanges at time timezone on date?'
+
+For sports events:
+'What was the final score/result of X at time timezone on date?'
+
+For political events:
+'What was the official outcome/status of X at time timezone on date?'
+
+For social media metrics:
+'What were the exact metrics/numbers for X at time timezone on date?'
+
+For numerical predictions:
+'What was the exact value/number of X at time timezone on date?'"
+
+Examples:
+Input: "will solana be below $165 by jan 15th 2025 12pm pst"
+Output: "What was Solana's exact price across major exchanges at 12:00 PM PST on January 15th, 2025?"
+
+Input: "will Arsenal win Premier League by may 15th 2025 5pm gmt"
+Output: "What was Arsenal's final position in the Premier League at 5:00 PM GMT on May 15th, 2025?"
+
+Input: "will Trump reach 50M followers by feb 1st 2025 3pm est"
+Output: "What was Trump's exact follower count at 3:00 PM EST on February 1st, 2025?"
+`;
     // Perform the search and get the search results
     const searchResults = await search(searchQuery);
     // Return the content of the first search result
@@ -75,7 +108,7 @@ export class BetProcessor {
       const currentTime = await getCurrentTime();
 
       // Step 2: Search for real-time information
-      const searchResults = await this.searchBetOutcome(bet);
+      const searchResults = await this.searchBetOutcome(bet, currentTime);
 
       // Step 3: Process search results using AI
       const resolvedOutcome = await this.processSearchResultsWithAI(
