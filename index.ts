@@ -1,7 +1,4 @@
 import { Telegraf, Scenes, session, Context, TelegramError } from 'telegraf';
-import Bet from './models/bet.schema';
-import UserWallet from './models/user-wallet.schema';
-import axios from 'axios';
 import { config } from 'dotenv';
 import { connectDb } from './config/db';
 import { env } from './config/environment';
@@ -23,6 +20,8 @@ import { getStats } from './commands/get-stats';
 
 config();
 connectDb();
+
+
 
 // Extend WizardSessionData to include withdrawData
 declare module 'telegraf/typings/scenes' {
@@ -48,8 +47,8 @@ bot.use(session());
 bot.use(stage.middleware());
 
 // Initialize and start the bet resolver service
-// const betResolver = new BetResolverService();
-// betResolver.start();
+const betResolver = new BetResolverService();
+betResolver.start();
 
 // Handle bet resolution callbacks
 bot.action(/^(accept_resolution|reject_resolution|vote):.+$/, async (ctx) => {
