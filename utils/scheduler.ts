@@ -90,7 +90,7 @@ export class BetResolverService {
           await pollQueue.add(
             'process-poll-results',
             { betId: bet._id },
-            { delay: 12 * 60 * 60 * 1000 }
+            { delay: 24 * 60 * 60 * 1000 }
           );
         } catch (error) {
           console.error('Error creating manual poll:', error);
@@ -149,24 +149,19 @@ export class BetResolverService {
   }
 
   public async finalizeResolution(betId: string) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    let winningOption = -1; // Initialize to invalid option
 
     try {
-      const bet = await Bet.findById(betId).session(session);
-      const poll = await Poll.findOne({ betId, resolved: false }).session(session);
+      const bet = await Bet.findById(betId);
+      const poll = await Poll.findOne({ betId, resolved: false });
 
       if (!bet || !poll) {
-        await session.abortTransaction();
-        session.endSession();
         return;
       }
 
       if (!bet.groupId) {
         throw new Error(`Bet ${bet._id} has no groupId`);
       }
-
-      let winningOption = -1; // Initialize to invalid option
 
       if (!poll.isManualPoll) {
         // For accept/reject polls
@@ -205,14 +200,9 @@ export class BetResolverService {
               { delay: 24 * 60 * 60 * 1000 }
             );
 
-            // Commit transaction since we're creating a new poll
-            await session.commitTransaction();
-            session.endSession();
             return;
           } catch (error) {
             console.error('Error creating manual poll:', error);
-            await session.abortTransaction();
-            session.endSession();
             throw error;
           }
         }
@@ -239,110 +229,123 @@ export class BetResolverService {
       // If no valid winning option was determined, abort
       if (winningOption === -1) {
         console.error('No valid winning option determined');
-        await session.abortTransaction();
-        session.endSession();
         return;
       }
 
       // Mark current poll as resolved and queue up poll results processing
-      poll.resolved = true;
-      await poll.save({ session });
+      await Poll.findByIdAndUpdate(poll._id, { resolved: true });
 
       await pollQueue.add(
         'process-poll-results',
         { betId: bet._id },
         { delay: 0 } // Process immediately since we have the result
       );
-
-      await session.commitTransaction();
-      session.endSession();
     } catch (error) {
-      await session.abortTransaction();
-      session.endSession();
       console.error('Error in finalizeResolution:', error);
       throw error;
     }
   }
 
   public async processPollResults(betId: string) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
+    let winningOption = -1;
+    
     try {
-      // Generate a unique lock ID
-      const lockId = new mongoose.Types.ObjectId().toString();
-      const now = new Date();
-      const lockTimeout = new Date(now.getTime() - 5 * 60 * 1000); // 5 minutes timeout
-
-      // Try to acquire lock
-      const poll = await Poll.findOneAndUpdate(
-        {
-          betId,
-          resolved: false,
-          $or: [
-            { processingLock: { $exists: false } },
-            { processingStarted: { $lt: lockTimeout } }
-          ]
-        },
-        {
-          $set: {
-            processingLock: lockId,
-            processingStarted: now
-          }
-        },
-        { session, new: true }
-      );
-
+      // Find the poll and bet
+      const poll = await Poll.findOne({ betId: new mongoose.Types.ObjectId(betId), resolved: false });
       if (!poll) {
-        await session.abortTransaction();
-        session.endSession();
-        console.log('Poll is already being processed or does not exist');
+        console.error('Poll not found or already resolved');
         return;
       }
 
-      const bet = await Bet.findById(betId).session(session);
+      const bet = await Bet.findById(betId);
       if (!bet) {
-        await session.abortTransaction();
-        session.endSession();
+        console.error('Bet not found');
         return;
       }
 
-      let winningOption = 0;
+      // For AI resolution polls
+      if (poll.aiOption !== undefined) {
+        const votes = Array.from(poll.votes.values());
+        const totalVotes = votes.length;
+        const accepts = votes.filter(v => v === 1).length;
+        
+        // If majority accepts AI resolution
+        if (accepts / totalVotes > 0.5) {
+          winningOption = poll.aiOption;
+        } else {
+          // Create a new manual poll if AI resolution is rejected
+          try {
+            const manualPoll = new Poll({
+              betId: bet._id,
+              votes: new Map(),
+              resolved: false
+            });
+            await manualPoll.save();
 
-      if (poll.isManualPoll) {
-        // For manual polls, get the poll results from Telegram
-        try {
-          const pollResults = await this.predoBot.telegram.stopPoll(poll.groupId, poll.pollMessageId);
-          const maxVotes = Math.max(...pollResults.options.map(opt => opt.voter_count));
-          winningOption = pollResults.options.findIndex(opt => opt.voter_count === maxVotes);
-        } catch (error) {
-          console.error('Error getting poll results:', error);
-          throw error;
+            await this.predoBot.telegram.sendMessage(
+              bet.groupId,
+              `🗳️ Manual Resolution for "${bet.title}"\n\nPlease vote for the correct outcome:`,
+              {
+                reply_markup: {
+                  inline_keyboard: bet.options.map((option, index) => [{
+                    text: option,
+                    callback_data: `vote:${bet._id}:${index}`
+                  }])
+                }
+              }
+            );
+
+            // Schedule poll results processing after 12 hours
+            await pollQueue.add(
+              'process-poll-results',
+              { betId: bet._id },
+              { delay: 12 * 60 * 60 * 1000 }
+            );
+
+            // Mark current poll as resolved
+            await Poll.findByIdAndUpdate(poll._id, { resolved: true });
+            return;
+          } catch (error) {
+            console.error('Error creating manual poll:', error);
+            throw error;
+          }
         }
       } else {
-        // Count votes for AI resolution acceptance/rejection
-        const voteCounts = new Map();
-        for (const vote of poll.votes.values()) {
-          voteCounts.set(vote, (voteCounts.get(vote) || 0) + 1);
+        // For manual polls with multiple options
+        const votes = Array.from(poll.votes.entries());
+        const optionVotes = new Map<number, number>();
+        
+        // Count votes for each option
+        for (const [_, vote] of votes) {
+          optionVotes.set(vote, (optionVotes.get(vote) || 0) + 1);
         }
 
-        // Find winning option
+        // Find option with most votes
         let maxVotes = 0;
-        for (const [option, count] of voteCounts.entries()) {
+        for (const [option, count] of optionVotes.entries()) {
           if (count > maxVotes) {
             maxVotes = count;
-            winningOption = Number(option);
+            winningOption = option;
           }
         }
       }
 
-      // Process payouts
+      // If no valid winning option was determined, abort
+      if (winningOption === -1) {
+        console.error('No valid winning option determined');
+        return;
+      }
+
+      // Mark current poll as resolved
+      await Poll.findByIdAndUpdate(poll._id, { resolved: true });
+
+      // Get winners based on winning option
       const winners = bet.participants.filter(
         (participant) => bet.votes.get(participant.toString()) === winningOption
       );
 
       const totalPrizePool = bet.minAmount * bet.participants.length;
-      const platformFee = totalPrizePool * 0.045; // 4.5% platform fee
+      const platformFee = totalPrizePool * 0.04; // 4% platform fee
       const netPrizePool = totalPrizePool - platformFee;
       let payoutPerWinner = 0;
 
@@ -356,26 +359,11 @@ export class BetResolverService {
             winners,
             winningOption,
             payoutPerWinner,
-            platformFee,
-            session
+            platformFee
           }
         );
       }
 
-      // Mark poll as resolved
-      poll.resolved = true;
-      await poll.save({ session });
-
-      // Mark bet as resolved
-      bet.resolved = true;
-      bet.winner = bet.options[winningOption];
-      await bet.save({ session });
-
-      // Commit transaction
-      await session.commitTransaction();
-      session.endSession();
-
-      // Send resolution message
       await this.predoBot.telegram.sendMessage(
         bet.groupId,
         `🎯 Bet "${bet.title}" has been resolved!\n\n` +
@@ -385,9 +373,7 @@ export class BetResolverService {
           `Payout per Winner: ${payoutPerWinner.toFixed(2)} USDC`
       );
     } catch (error) {
-      await session.abortTransaction();
-      session.endSession();
-      console.error('Error in processPollResults:', error);
+      console.error('Error processing poll results:', error);
       throw error;
     }
   }
