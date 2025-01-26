@@ -22,7 +22,6 @@ export class BetProcessor {
       - Options:
       ${bet.options.map((option, index) => `${index}: ${option}`).join('\n')}
       - End time: ${bet.endTime}
-      - Current Time: ${currentTime}
 , convert it into a verification query that follows these templates:
 For cryptocurrency prices:
 'What was X's exact price across major exchanges at time timezone on date?'
