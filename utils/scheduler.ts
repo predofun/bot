@@ -90,7 +90,7 @@ export class BetResolverService {
           await pollQueue.add(
             'process-poll-results',
             { betId: bet._id },
-            { delay: 24 * 60 * 60 * 1000 }
+            { delay: 12 * 60 * 60 * 1000 }
           );
         } catch (error) {
           console.error('Error creating manual poll:', error);

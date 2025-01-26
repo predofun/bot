@@ -124,7 +124,7 @@ payoutQueue.process('multi-payout', async (job) => {
 
       if (!platformResult?.success) {
         throw new Error('Failed to process platform fee');
-      } 
+      }
 
       payoutResults.push(platformResult);
     }
@@ -138,11 +138,11 @@ payoutQueue.process('multi-payout', async (job) => {
     await bot.telegram.sendMessage(
       bet.groupId,
       `🎯 Bet "${bet.title}" resolved!\n` +
-      `Winning Option: ${bet.options[winningOption]}\n` +
-      `Winners: ${winners.map((w) => `@${w}`).join(', ')}\n` +
-      `Platform Fee: ${platformFee.toFixed(2)} USDC (4.5%)\n` +
-      `Payout per Winner: ${payoutPerWinner.toFixed(2)} USDC\n` +
-      `Transaction: ${payoutResults[0].signature}`
+        `Winning Option: ${bet.options[winningOption]}\n` +
+        `Winners: ${winners.map((w) => `@${w}`).join(', ')}\n` +
+        `Platform Fee: ${platformFee.toFixed(2)} USDC (4.5%)\n` +
+        `Payout per Winner: ${payoutPerWinner.toFixed(2)} USDC\n` +
+        `Transaction: ${payoutResults[0].signature}`
     );
 
     return { success: true, signature: payoutResults[0].signature };
