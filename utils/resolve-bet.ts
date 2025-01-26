@@ -13,7 +13,7 @@ const google = createGoogleGenerativeAI({
 // Define a class to process and resolve bets
 export class BetProcessor {
   // Method to search for real-time information about the bet
-  private async searchBetOutcome(bet: { title: string; options: string[] }, currentTime: string) {
+  private async searchBetOutcome(bet: { title: string; options: string[], endTime: string}, currentTime: string) {
     // Construct a search query using the bet title and options
     const searchQuery = `
 "Given a bet query ${bet.title} with the bet details:
@@ -21,9 +21,9 @@ export class BetProcessor {
       - Title: ${bet.title}
       - Options:
       ${bet.options.map((option, index) => `${index}: ${option}`).join('\n')}
+      - End time: ${bet.endTime}
       - Current Time: ${currentTime}
 , convert it into a verification query that follows these templates:
-
 For cryptocurrency prices:
 'What was X's exact price across major exchanges at time timezone on date?'
 
@@ -101,6 +101,7 @@ Output: "What was Trump's exact follower count at 3:00 PM EST on February 1st, 2
   public async resolveBet(bet: {
     title: string;
     options: string[];
+    endTime: string
     votes: Record<string, number>;
   }) {
     try {
@@ -130,6 +131,7 @@ Output: "What was Trump's exact follower count at 3:00 PM EST on February 1st, 2
 export async function resolveWithAI(bet: {
   title: string;
   options: string[];
+  endTime: string
   votes: Record<string, number>;
 }): Promise<{ option: number; reason: string }> {
   const processor = new BetProcessor();
