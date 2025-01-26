@@ -25,11 +25,14 @@ export class BetResolverService {
 
   private async checkExpiredBets() {
     try {
-      // Query for expired bets with at least one participant
+      // Get all expired bets that haven't been resolved and have participants
       const expiredBets = await Bet.find({
         endTime: { $lte: new Date() }, // Bets that have ended
         resolved: false, // Not yet resolved
-        participants: { $exists: true, $ne: [] } // Ensure there's at least one participant
+        participants: { $exists: true, $ne: [] }, // Ensure there's at least one participant
+        _id: {
+          $nin: await Poll.distinct('betId', { resolved: false }) // Exclude bets that have unresolved polls
+        }
       });
 
       console.log('Amount of bets:', expiredBets.length);

@@ -104,7 +104,18 @@ export async function handleBetResolutionCallback(ctx: Context) {
     if (callbackQuery.message && 'reply_markup' in callbackQuery.message) {
       options.reply_markup = callbackQuery.message.reply_markup;
     }
-    await ctx.editMessageText(messageText, options);
+
+    // Only edit if content has changed
+    if (callbackQuery.message && 'text' in callbackQuery.message && callbackQuery.message.text !== messageText) {
+      try {
+        await ctx.editMessageText(messageText, options);
+      } catch (error) {
+        if (!(error instanceof Error) || !error.message.includes('message is not modified')) {
+          throw error;
+        }
+        // Silently ignore "message not modified" errors
+      }
+    }
 
   } catch (error) {
     console.error('Error handling bet resolution callback:', error);
