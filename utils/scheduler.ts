@@ -174,30 +174,33 @@ export class BetResolverService {
         } else {
           try {
             // Create a new poll for manual resolution
-            const options = bet.options.map((opt, idx) => ({
-              text: opt,
-              callback_data: `vote:${bet._id}:${idx}`
-            }));
-            const pollMsg = await this.predoBot.telegram.sendMessage(
+            const sentMessage = await this.predoBot.telegram.sendMessage(
               bet.groupId,
-              `🗳️ Manual Resolution Required for "${bet.title}"\n\n` +
-                `Please vote for the correct outcome:`,
-              { reply_markup: { inline_keyboard: options.map((opt) => [opt]) } }
+              `🗳️ Manual Resolution for "${bet.title}"\n\nPlease vote for the correct outcome:`,
+              {
+                reply_markup: {
+                  inline_keyboard: bet.options.map((option, index) => [{
+                    text: option,
+                    callback_data: `vote:${bet._id}:${index}`
+                  }])
+                }
+              }
             );
 
-            await Poll.create({
+            const manualPoll = new Poll({
               betId: bet._id,
-              pollMessageId: pollMsg.message_id.toString(),
+              pollMessageId: sentMessage.message_id.toString(),
               groupId: bet.groupId,
-              createdAt: new Date(),
-              isManualPoll: true
+              isManualPoll: true,
+              resolved: false
             });
+            await manualPoll.save();
 
-            // Schedule poll results processing after 24 hours
+            // Schedule poll results processing after 12 hours
             await pollQueue.add(
               'process-poll-results',
               { betId: bet._id },
-              { delay: 24 * 60 * 60 * 1000 }
+              { delay: 12 * 60 * 60 * 1000 }
             );
 
             return;
@@ -273,16 +276,9 @@ export class BetResolverService {
         if (accepts / totalVotes > 0.5) {
           winningOption = poll.aiOption;
         } else {
-          // Create a new manual poll if AI resolution is rejected
           try {
-            const manualPoll = new Poll({
-              betId: bet._id,
-              votes: new Map(),
-              resolved: false
-            });
-            await manualPoll.save();
-
-            await this.predoBot.telegram.sendMessage(
+            // Create a new manual poll if AI resolution is rejected
+            const sentMessage = await this.predoBot.telegram.sendMessage(
               bet.groupId,
               `🗳️ Manual Resolution for "${bet.title}"\n\nPlease vote for the correct outcome:`,
               {
@@ -294,6 +290,15 @@ export class BetResolverService {
                 }
               }
             );
+
+            const manualPoll = new Poll({
+              betId: bet._id,
+              pollMessageId: sentMessage.message_id.toString(),
+              groupId: bet.groupId,
+              isManualPoll: true,
+              resolved: false
+            });
+            await manualPoll.save();
 
             // Schedule poll results processing after 12 hours
             await pollQueue.add(
