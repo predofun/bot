@@ -73,7 +73,7 @@ export class BetResolverService {
             {
               is_anonymous: false,
               allows_multiple_answers: false,
-              open_period: 24 * 60 * 60 // 24 hours in seconds
+              open_period: 3 * 60 * 60 // 3 hours in seconds
             }
           );
 
@@ -86,11 +86,11 @@ export class BetResolverService {
             isManualPoll: true
           });
 
-          // Schedule poll results processing after 24 hours
+          // Schedule poll results processing after 3 hours
           await pollQueue.add(
             'process-poll-results',
             { betId: bet._id },
-            { delay: 12 * 60 * 60 * 1000 }
+            { delay: 3 * 60 * 60 * 1000 }
           );
         } catch (error) {
           console.error('Error creating manual poll:', error);
@@ -129,8 +129,8 @@ export class BetResolverService {
         isManualPoll: false
       });
 
-      // Schedule a check after 3 hours
-      await pollQueue.add('finalize-resolution', { betId: bet._id }, { delay: 3 * 60 * 60 * 1000 });
+      // Schedule a check after 1 hour
+      await pollQueue.add('finalize-resolution', { betId: bet._id }, { delay: 1 * 60 * 60 * 1000 });
     } catch (error) {
       console.error('Error processing bet resolution:', error);
       try {
@@ -194,11 +194,11 @@ export class BetResolverService {
             });
             await manualPoll.save();
 
-            // Schedule poll results processing after 12 hours
+            // Schedule poll results processing after 3 hours
             await pollQueue.add(
               'process-poll-results',
               { betId: bet._id },
-              { delay: 12 * 60 * 60 * 1000 }
+              { delay: 3 * 60 * 60 * 1000 }
             );
 
             return;

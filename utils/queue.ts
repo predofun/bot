@@ -20,8 +20,8 @@ export const payoutQueue = new Queue('bet-payouts', {
     removeOnFail: false
   },
   limiter: {
-    max: 1,
-    duration: 60000 // 1 minute in milliseconds
+    max: 5,  // Allow 5 jobs per 30 seconds
+    duration: 30000
   }
 });
 
@@ -37,8 +37,8 @@ export const pollQueue = new Queue('poll-processing', {
     removeOnFail: false
   },
   limiter: {
-    max: 1,
-    duration: 12000 // 2 minutes in milliseconds
+    max: 10,  // Allow 10 jobs per 30 seconds
+    duration: 30000
   }
 });
 
