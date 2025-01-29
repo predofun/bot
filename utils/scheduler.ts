@@ -347,10 +347,16 @@ export class BetResolverService {
       // Mark current poll as resolved
       await Poll.findByIdAndUpdate(poll._id, { resolved: true });
 
+      // Convert votes to Map if it's a plain object
+      const votesMap = bet.votes instanceof Map ? 
+        bet.votes : 
+        new Map(Object.entries(bet.votes || {}));
+
       // Get winners based on winning option
-      const winners = bet.participants.filter(
-        (participant) => bet.votes.get(participant.toString()) === winningOption
-      );
+      const winners = bet.participants.filter((participant) => {
+        const vote = votesMap.get(participant.toString());
+        return vote === winningOption;
+      });
 
       const totalPrizePool = bet.minAmount * bet.participants.length;
       const platformFee = totalPrizePool * 0.04; // 4% platform fee

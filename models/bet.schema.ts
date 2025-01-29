@@ -30,7 +30,7 @@ const BetSchema: Schema = new Schema(
     endTime: { type: Date, required: true },
     participants: { type: [mongoose.Schema.Types.ObjectId], default: [] },
     creatorId: { type: String, required: true },
-    votes: { type: Map, of: Number, default: {} },
+    votes: { type: Map, of: Number, default: new Map() },
     image: { type: String },
     chatId: { type: String, required: true },
     resolved: { type: Boolean, default: false },
