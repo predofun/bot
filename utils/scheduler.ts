@@ -130,11 +130,7 @@ export class BetResolverService {
       });
 
       // Schedule a check after 3 hours
-      await pollQueue.add(
-        'finalize-resolution',
-        { betId: bet._id },
-        { delay: 3 * 60 * 60 * 1000 }
-      );
+      await pollQueue.add('finalize-resolution', { betId: bet._id }, { delay: 3 * 60 * 60 * 1000 });
     } catch (error) {
       console.error('Error processing bet resolution:', error);
       try {
@@ -179,10 +175,12 @@ export class BetResolverService {
               `🗳️ Manual Resolution for "${bet.title}"\n\nPlease vote for the correct outcome:`,
               {
                 reply_markup: {
-                  inline_keyboard: bet.options.map((option, index) => [{
-                    text: option,
-                    callback_data: `vote:${bet._id}:${index}`
-                  }])
+                  inline_keyboard: bet.options.map((option, index) => [
+                    {
+                      text: option,
+                      callback_data: `vote:${bet._id}:${index}`
+                    }
+                  ])
                 }
               }
             );
@@ -213,7 +211,7 @@ export class BetResolverService {
         // For manual polls with multiple options
         const votes = Array.from(poll.votes.entries());
         const optionVotes = new Map<number, number>();
-        
+
         // Count votes for each option
         for (const [_, vote] of votes) {
           optionVotes.set(vote, (optionVotes.get(vote) || 0) + 1);
@@ -251,10 +249,13 @@ export class BetResolverService {
 
   public async processPollResults(betId: string) {
     let winningOption = -1;
-    
+
     try {
       // Find the poll and bet
-      const poll = await Poll.findOne({ betId: new mongoose.Types.ObjectId(betId), resolved: false });
+      const poll = await Poll.findOne({
+        betId: new mongoose.Types.ObjectId(betId),
+        resolved: false
+      });
       if (!poll) {
         console.error('Poll not found or already resolved');
         return;
@@ -270,8 +271,8 @@ export class BetResolverService {
       if (poll.aiOption !== undefined) {
         const votes = Array.from(poll.votes.values());
         const totalVotes = votes.length;
-        const accepts = votes.filter(v => v === 1).length;
-        
+        const accepts = votes.filter((v) => v === 1).length;
+
         // If majority accepts AI resolution
         if (accepts / totalVotes > 0.5) {
           winningOption = poll.aiOption;
@@ -283,10 +284,12 @@ export class BetResolverService {
               `🗳️ Manual Resolution for "${bet.title}"\n\nPlease vote for the correct outcome:`,
               {
                 reply_markup: {
-                  inline_keyboard: bet.options.map((option, index) => [{
-                    text: option,
-                    callback_data: `vote:${bet._id}:${index}`
-                  }])
+                  inline_keyboard: bet.options.map((option, index) => [
+                    {
+                      text: option,
+                      callback_data: `vote:${bet._id}:${index}`
+                    }
+                  ])
                 }
               }
             );
@@ -319,7 +322,7 @@ export class BetResolverService {
         // For manual polls with multiple options
         const votes = Array.from(poll.votes.entries());
         const optionVotes = new Map<number, number>();
-        
+
         // Count votes for each option
         for (const [_, vote] of votes) {
           optionVotes.set(vote, (optionVotes.get(vote) || 0) + 1);
@@ -357,16 +360,13 @@ export class BetResolverService {
       if (winners.length > 0) {
         payoutPerWinner = netPrizePool / winners.length;
 
-        await payoutQueue.add(
-          'multi-payout',
-          {
-            bet,
-            winners,
-            winningOption,
-            payoutPerWinner,
-            platformFee
-          }
-        );
+        await payoutQueue.add('multi-payout', {
+          bet,
+          winners,
+          winningOption,
+          payoutPerWinner,
+          platformFee
+        });
       }
 
       await this.predoBot.telegram.sendMessage(

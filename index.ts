@@ -12,6 +12,7 @@ import resolveBet from './commands/close-bet';
 import fetchBetHistory from './commands/fetch-bet-history';
 import getOngoingBets from './commands/fetch-group-bet-history';
 import withdrawScene from './commands/withdraw-funds';
+import retryFailedJobsCommand from './commands/retry-failed-jobs';
 import { WizardSessionData } from 'telegraf/typings/scenes';
 import { getChatType } from './utils/helper';
 import { handleBetResolutionCallback } from './commands/handle-bet-resolution';
@@ -20,8 +21,6 @@ import { getStats } from './commands/get-stats';
 
 config();
 connectDb();
-
-
 
 // Extend WizardSessionData to include withdrawData
 declare module 'telegraf/typings/scenes' {
@@ -47,8 +46,8 @@ bot.use(session());
 bot.use(stage.middleware());
 
 // Initialize and start the bet resolver service
-const betResolver = new BetResolverService();
-betResolver.start();
+// const betResolver = new BetResolverService();
+// betResolver.start();
 
 // Handle bet resolution callbacks
 bot.action(/^(accept_resolution|reject_resolution|vote):.+$/, async (ctx) => {
@@ -100,6 +99,12 @@ bot.command('resolve', async (ctx) => {
   await resolveBet(ctx, ctx.chat.type);
 });
 
+bot.command('retry_failed_jobs', async (ctx) => {
+  // Only allow admin to retry failed jobs
+
+  await retryFailedJobsCommand(ctx);
+});
+
 bot.on('message', async (ctx) => {
   // Check if message contains bot mention
   try {
@@ -144,7 +149,7 @@ bot.on('message', async (ctx) => {
             console.log('predo fun reply');
             const gameInfo = await getPredoGameInfo(input, ctx.from?.username, ctx.chat.type);
             ctx.reply(gameInfo, {
-              parse_mode: 'Markdown',
+              parse_mode: 'Markdown'
             });
         }
       }

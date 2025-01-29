@@ -166,6 +166,26 @@ pollQueue.process('finalize-resolution', async (job) => {
   await betResolver.finalizeResolution(betId);
 });
 
+// Clean and retry failed jobs
+export const retryFailedJobs = async () => {
+  // Get all failed jobs from both queues
+  const failedPayoutJobs = await payoutQueue.getFailed();
+  const failedPollJobs = await pollQueue.getFailed();
+
+  console.log(`Found ${failedPayoutJobs.length} failed payout jobs and ${failedPollJobs.length} failed poll jobs`);
+
+  // Retry all failed jobs
+  for (const job of failedPayoutJobs) {
+    await job.retry();
+  }
+
+  for (const job of failedPollJobs) {
+    await job.retry();
+  }
+
+  console.log('All failed jobs have been queued for retry');
+};
+
 // Handle failed jobs
 payoutQueue.on('failed', async (job, error) => {
   console.error(`Job ${job.id} failed:`, error);
