@@ -396,10 +396,21 @@ export class BetResolverService {
       const unprocessedBets = await Bet.find({
         resolved: false,
         _id: { $in: await Poll.distinct('betId', { resolved: true }) }
+      })
+      .select({
+        _id: 1,
+        title: 1,
+        options: 1,
+        participants: 1,
+        votes: 1,
+        minAmount: 1,
+        groupId: 1
       });
+      
       console.log(`Found ${unprocessedBets.length} unpaid bets with resolved polls`);
       
       for (const bet of unprocessedBets) {
+        console.log('Raw bet data:', JSON.stringify(bet.toObject(), null, 2));
         console.log('bet:', bet);
         console.log(`\n========= Processing Bet ${bet._id} =========`);
         console.log(`Title: "${bet.title}"`);
