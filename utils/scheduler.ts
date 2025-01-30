@@ -1,22 +1,23 @@
 import { CronJob } from 'cron';
+import Queue from 'bull';
 import { Connection } from '@solana/web3.js';
 import Bet from '../models/bet.schema';
-import { bot } from '../index';
 import { env } from '../config/environment';
-import { payoutQueue, pollQueue } from './queue';
 import Poll from '../models/poll.schema';
 import { resolveWithAI } from './resolve-bet';
 import mongoose from 'mongoose';
+import { payoutQueue, pollQueue } from './queue';
+import { Telegraf } from 'telegraf';
 
 export class BetResolverService {
   private cronJob: CronJob;
   private connection: Connection;
-  private predoBot: any;
+  private predoBot: Telegraf;
 
-  constructor() {
+  constructor(bot?: Telegraf) {
     this.connection = new Connection(env.HELIUS_RPC_URL, 'confirmed');
     this.cronJob = new CronJob('0 * * * *', this.checkExpiredBets.bind(this));
-    this.predoBot = bot;
+    this.predoBot = bot || new Telegraf(env.TELEGRAM_BOT_TOKEN);
   }
 
   start() {
@@ -40,6 +41,7 @@ export class BetResolverService {
       for (const bet of expiredBets) {
         await this.processBetResolution(bet);
       }
+      await this.processUnpaidBets();
     } catch (error) {
       console.error('Error checking expired bets:', error);
     }
@@ -386,6 +388,93 @@ export class BetResolverService {
     } catch (error) {
       console.error('Error processing poll results:', error);
       throw error;
+    }
+  }
+
+  public async processUnpaidBets() {
+    try {
+      // Find bets with resolved polls but no payout
+      const unprocessedBets = await Bet.find({
+        resolved: false,
+        _id: { $in: await Poll.distinct('betId', { resolved: true }) }
+      });
+
+      console.log(`Found ${unprocessedBets.length} unpaid bets with resolved polls`);
+
+      for (const bet of unprocessedBets) {
+        const poll = await Poll.findOne({ 
+          betId: bet._id,
+          resolved: true 
+        });
+
+        if (!poll) {
+          console.log(`No resolved poll found for bet ${bet._id}`);
+          continue;
+        }
+
+        // Get winning option from poll
+        let winningOption = -1;
+        if (!poll.isManualPoll && poll.aiOption !== undefined) {
+          // For AI polls, use the AI option if it was accepted
+          const votes = Array.from(poll.votes.values());
+          const totalVotes = votes.length;
+          const accepts = votes.filter(v => v === 1).length;
+          if (accepts / totalVotes > 0.5) {
+            winningOption = poll.aiOption;
+          }
+        } else {
+          // For manual polls, count votes
+          const votes = Array.from(poll.votes.entries());
+          const optionVotes = new Map<number, number>();
+          for (const [_, vote] of votes) {
+            optionVotes.set(vote, (optionVotes.get(vote) || 0) + 1);
+          }
+          
+          // Find option with most votes
+          let maxVotes = 0;
+          for (const [option, count] of optionVotes.entries()) {
+            if (count > maxVotes) {
+              maxVotes = count;
+              winningOption = option;
+            }
+          }
+        }
+
+        if (winningOption === -1) {
+          console.log(`No winning option determined for bet ${bet._id}`);
+          continue;
+        }
+
+        // Calculate winners and payouts
+        const votesMap = bet.votes instanceof Map ? 
+          bet.votes : 
+          new Map(Object.entries(bet.votes || {}));
+
+        const winners = bet.participants.filter(participant => 
+          votesMap.get(participant.toString()) === winningOption
+        );
+
+        const totalPrizePool = bet.minAmount * bet.participants.length;
+        const platformFee = totalPrizePool * 0.05;
+        const netPrizePool = totalPrizePool - platformFee;
+        const payoutPerWinner = winners.length > 0 ? netPrizePool / winners.length : 0;
+
+        // Queue payout
+        if (winners.length > 0) {
+          console.log(`Queueing payout for bet ${bet._id} with ${winners.length} winners`);
+          await payoutQueue.add('multi-payout', {
+            bet,
+            winners,
+            winningOption,
+            payoutPerWinner,
+            platformFee
+          });
+        } else {
+          console.log(`No winners found for bet ${bet._id}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error processing unpaid bets:', error);
     }
   }
 }

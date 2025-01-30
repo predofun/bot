@@ -96,7 +96,7 @@ payoutQueue.process('multi-payout', async (job) => {
 
     // Process winners sequentially to avoid rate limits
     for (const winner of winners) {
-      const wallet = await UserWallet.findById(winner).select('address').session(session);
+      const wallet = await UserWallet.findById(winner).select('address');
       if (!wallet) {
         throw new Error(`Winner wallet not found for user ${winner}`);
       }
