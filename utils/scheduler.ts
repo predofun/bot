@@ -396,101 +396,37 @@ export class BetResolverService {
       const unprocessedBets = await Bet.find({
         resolved: false,
         _id: { $in: await Poll.distinct('betId', { resolved: true }) }
-      })
-      .select({
-        _id: 1,
-        title: 1,
-        options: 1,
-        participants: 1,
-        votes: 1,
-        minAmount: 1,
-        groupId: 1
       });
-      
+
       console.log(`Found ${unprocessedBets.length} unpaid bets with resolved polls`);
-      
+
       for (const bet of unprocessedBets) {
-        console.log('Raw bet data:', JSON.stringify(bet.toObject(), null, 2));
-        console.log('bet:', bet);
-        console.log(`\n========= Processing Bet ${bet._id} =========`);
-        console.log(`Title: "${bet.title}"`);
-        console.log(`Options:`, bet.options);
-        console.log(`Participants:`, bet.participants);
+        console.log('\n========= Processing Bet =========');
+        console.log('Bet ID:', bet._id);
+        console.log('Title:', bet.title);
+        console.log('Raw votes:', bet.votes);
+        console.log('Type of votes:', typeof bet.votes);
 
-        const poll = await Poll.findOne({
-          betId: bet._id,
-          resolved: true
-        });
-
-        if (!poll) {
-          console.log(`❌ No resolved poll found for bet ${bet._id}`);
-          continue;
-        }
-
-        console.log(`\nPoll Details:`);
-        console.log(`Poll ID: ${poll._id}`);
-        console.log(`Is Manual Poll: ${poll.isManualPoll}`);
-        console.log(`AI Option: ${poll.aiOption}`);
-        console.log(`Poll Votes:`, Object.fromEntries(poll.votes));
-
-        // Get winning option from poll
-        let winningOption = -1;
-        if (!poll.isManualPoll && poll.aiOption !== undefined) {
-          // For AI polls, use the AI option if it was accepted
-          const votes = Array.from(poll.votes.values());
-          const totalVotes = votes.length;
-          const accepts = votes.filter((v) => v === 1).length;
-          console.log(`\nAI Poll Resolution:`);
-          console.log(`Total Votes: ${totalVotes}`);
-          console.log(`Accept Votes: ${accepts}`);
-          console.log(`Accept Ratio: ${accepts / totalVotes}`);
-
-          if (accepts / totalVotes > 0.5) {
-            winningOption = poll.aiOption;
-            console.log(`✅ AI option ${winningOption} accepted`);
-          } else {
-            console.log(`❌ AI option rejected`);
-          }
-        } else {
-          // For manual polls, count votes
-          console.log(`\nManual Poll Vote Count:`);
-          const votes = Array.from(poll.votes.entries());
-          const optionVotes = new Map<number, number>();
-          for (const [_, vote] of votes) {
-            optionVotes.set(vote, (optionVotes.get(vote) || 0) + 1);
-          }
-
-          console.log('Votes per option:', Object.fromEntries(optionVotes));
-
-          // Find option with most votes
-          let maxVotes = 0;
-          for (const [option, count] of optionVotes.entries()) {
-            console.log(`Option ${option}: ${count} votes`);
-            if (count > maxVotes) {
-              maxVotes = count;
-              winningOption = option;
+        // Convert string option values to numbers
+        const votesMap = new Map();
+        if (bet.votes && typeof bet.votes === 'object') {
+          Object.entries(bet.votes).forEach(([userId, vote]) => {
+            // Convert string vote (e.g., "Yes", "No") to number based on options array index
+            const optionIndex = bet.options.indexOf(vote);
+            if (optionIndex !== -1) {
+              votesMap.set(userId, optionIndex);
             }
-          }
-          console.log(`✅ Option ${winningOption} won with ${maxVotes} votes`);
+          });
         }
 
-        if (winningOption === -1) {
-          console.log(`❌ No winning option determined for bet ${bet._id}`);
-          continue;
-        }
-
-        // Calculate winners and payouts
-        console.log(`\nBet Votes:`, Object.fromEntries(bet.votes));
-        const votesMap =
-          bet.votes instanceof Map ? bet.votes : new Map(Object.entries(bet.votes || {}));
         console.log('Processed votes map:', Object.fromEntries(votesMap));
 
         console.log('\nChecking winners:');
         const winners = bet.participants.filter((participant) => {
           const participantId = participant.toString();
           const vote = votesMap.get(participantId);
-          console.log(`Participant ${participantId}: voted ${vote}, winning option is ${winningOption} - ${vote === winningOption ? '✅ Winner' : '❌ Not winner'}`);
-          return vote === winningOption;
+          console.log(`Participant ${participantId}: voted ${vote}, winning option is ${bet.options[vote]} - ${vote !== undefined ? '✅ Winner' : '❌ Not winner'}`);
+          return vote !== undefined;
         });
 
         console.log(`\nWinners Summary:`);
@@ -514,7 +450,7 @@ export class BetResolverService {
           await payoutQueue.add('multi-payout', {
             bet,
             winners,
-            winningOption,
+            winningOption: winners[0],
             payoutPerWinner,
             platformFee
           });
