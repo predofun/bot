@@ -13,10 +13,11 @@ async function checkBetVotes() {
     const betsCollection = db.collection('bets');
     
     const bets = await betsCollection.find({
-      resolved: false
+      resolved: false,
+      $where: "return Object.keys(this.votes || {}).length > 0"
     }).toArray();
 
-    console.log('Raw bets from MongoDB:');
+    console.log('Raw bets from MongoDB:', bets.length);
     bets.forEach(bet => {
       console.log('\n=== Bet ===');
       console.log('ID:', bet._id);

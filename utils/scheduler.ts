@@ -392,20 +392,24 @@ export class BetResolverService {
 
   public async processUnpaidBets() {
     try {
-      // Find bets with resolved polls but no payout
-      const unprocessedBets = await Bet.find({
+      // Get raw data directly from MongoDB to ensure we get the votes
+      const db = mongoose.connection.db;
+      const betsCollection = db.collection('bets');
+      
+      const unprocessedBets = await betsCollection.find({
         resolved: false,
-        _id: { $in: await Poll.distinct('betId', { resolved: true }) }
-      });
+        _id: { $in: await Poll.distinct('betId', { resolved: true }) },
+        $where: "return Object.keys(this.votes || {}).length > 0"
+      }).toArray();
 
-      console.log(`Found ${unprocessedBets.length} unpaid bets with resolved polls`);
-
+      console.log(`Found ${unprocessedBets.length} unpaid bets with resolved polls and votes`);
+      
       for (const bet of unprocessedBets) {
         console.log('\n========= Processing Bet =========');
         console.log('Bet ID:', bet._id);
         console.log('Title:', bet.title);
         console.log('Raw votes:', bet.votes);
-        console.log('Type of votes:', typeof bet.votes);
+        console.log('Options:', bet.options);
 
         // Convert string option values to numbers
         const votesMap = new Map();
@@ -418,7 +422,7 @@ export class BetResolverService {
             }
           });
         }
-
+        
         console.log('Processed votes map:', Object.fromEntries(votesMap));
 
         console.log('\nChecking winners:');
