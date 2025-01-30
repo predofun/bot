@@ -16,7 +16,7 @@ export class BetResolverService {
 
   constructor(bot?: Telegraf) {
     this.connection = new Connection(env.HELIUS_RPC_URL, 'confirmed');
-    this.cronJob = new CronJob('0 */2 * * * *', this.checkExpiredBets.bind(this));
+    this.cronJob = new CronJob('0 */1 * * * *', this.checkExpiredBets.bind(this));
     this.predoBot = bot || new Telegraf(env.TELEGRAM_BOT_TOKEN);
   }
 
@@ -250,187 +250,204 @@ export class BetResolverService {
   }
 
   public async processPollResults(betId: string) {
-    let winningOption = -1;
-
-    try {
-      // Find the poll and bet
-      const poll = await Poll.findOne({
-        betId: new mongoose.Types.ObjectId(betId),
-        resolved: false
-      });
-      if (!poll) {
-        console.error('Poll not found or already resolved');
-        return;
-      }
-
-      const bet = await Bet.findById(betId);
-      if (!bet) {
-        console.error('Bet not found');
-        return;
-      }
-
-      // For AI resolution polls
-      if (poll.aiOption !== undefined) {
-        const votes = Array.from(poll.votes.values());
-        const totalVotes = votes.length;
-        const accepts = votes.filter((v) => v === 1).length;
-
-        // If majority accepts AI resolution
-        if (accepts / totalVotes > 0.5) {
-          winningOption = poll.aiOption;
-        } else {
-          try {
-            // Create a new manual poll if AI resolution is rejected
-            const sentMessage = await this.predoBot.telegram.sendMessage(
-              bet.groupId,
-              `🗳️ Manual Resolution for "${bet.title}"\n\nPlease vote for the correct outcome:`,
-              {
-                reply_markup: {
-                  inline_keyboard: bet.options.map((option, index) => [
-                    {
-                      text: option,
-                      callback_data: `vote:${bet._id}:${index}`
-                    }
-                  ])
-                }
-              }
-            );
-
-            const manualPoll = new Poll({
-              betId: bet._id,
-              pollMessageId: sentMessage.message_id.toString(),
-              groupId: bet.groupId,
-              isManualPoll: true,
-              resolved: false
-            });
-            await manualPoll.save();
-
-            // Schedule poll results processing after 12 hours
-            await pollQueue.add(
-              'process-poll-results',
-              { betId: bet._id },
-              { delay: 12 * 60 * 60 * 1000 }
-            );
-
-            // Mark current poll as resolved
-            await Poll.findByIdAndUpdate(poll._id, { resolved: true });
-            return;
-          } catch (error) {
-            console.error('Error creating manual poll:', error);
-            throw error;
-          }
-        }
-      } else {
-        // For manual polls with multiple options
-        const votes = Array.from(poll.votes.entries());
-        const optionVotes = new Map<number, number>();
-
-        // Count votes for each option
-        for (const [_, vote] of votes) {
-          optionVotes.set(vote, (optionVotes.get(vote) || 0) + 1);
-        }
-
-        // Find option with most votes
-        let maxVotes = 0;
-        for (const [option, count] of optionVotes.entries()) {
-          if (count > maxVotes) {
-            maxVotes = count;
-            winningOption = option;
-          }
-        }
-      }
-
-      // If no valid winning option was determined, abort
-      if (winningOption === -1) {
-        console.error('No valid winning option determined');
-        return;
-      }
-
-      // Mark current poll as resolved
-      await Poll.findByIdAndUpdate(poll._id, { resolved: true });
-
-      // Convert votes to Map if it's a plain object
-      const votesMap =
-        bet.votes instanceof Map ? bet.votes : new Map(Object.entries(bet.votes || {}));
-
-      // Get winners based on winning option
-      const winners = bet.participants.filter((participant) => {
-        const vote = votesMap.get(participant.toString());
-        return vote === winningOption;
-      });
-
-      const totalPrizePool = bet.minAmount * bet.participants.length;
-      const platformFee = totalPrizePool * 0.04; // 4% platform fee
-      const netPrizePool = totalPrizePool - platformFee;
-      let payoutPerWinner = 0;
-
-      if (winners.length > 0) {
-        payoutPerWinner = netPrizePool / winners.length;
-
-        await payoutQueue.add('multi-payout', {
-          bet,
-          winners,
-          winningOption,
-          payoutPerWinner,
-          platformFee
-        });
-      }
-
-      await this.predoBot.telegram.sendMessage(
-        bet.groupId,
-        `🎯 Bet "${bet.title}" has been resolved!\n\n` +
-          `Winning Option: ${bet.options[winningOption]}\n` +
-          `Number of Winners: ${winners.length}\n` +
-          `Platform Fee: ${platformFee.toFixed(2)} USDC (4%)\n` +
-          `Payout per Winner: ${payoutPerWinner.toFixed(2)} USDC`
-      );
-    } catch (error) {
-      console.error('Error processing poll results:', error);
-      throw error;
-    }
+    // let winningOption = -1;
+    // try {
+    //   // Find the poll and bet
+    //   const poll = await Poll.findOne({
+    //     betId: new mongoose.Types.ObjectId(betId),
+    //     resolved: false
+    //   });
+    //   if (!poll) {
+    //     console.error('Poll not found or already resolved');
+    //     return;
+    //   }
+    //   const bet = await Bet.findById(betId);
+    //   if (!bet) {
+    //     console.error('Bet not found');
+    //     return;
+    //   }
+    //   // Get winning option from poll
+    //   if (!poll.isManualPoll && poll.aiOption !== undefined) {
+    //     // For AI polls, use the AI option if it was accepted
+    //     const votes = Array.from(poll.votes.values());
+    //     const totalVotes = votes.length;
+    //     const accepts = votes.filter(v => v === 1).length;
+    //     if (accepts / totalVotes > 0.5) {
+    //       winningOption = poll.aiOption;
+    //     }
+    //   } else {
+    //     // For manual polls, count votes
+    //     const votes = Array.from(poll.votes.entries());
+    //     const optionVotes = new Map<number, number>();
+    //     for (const [_, vote] of votes) {
+    //       optionVotes.set(vote, (optionVotes.get(vote) || 0) + 1);
+    //     }
+    //     // Find option with most votes
+    //     let maxVotes = 0;
+    //     for (const [option, count] of optionVotes.entries()) {
+    //       if (count > maxVotes) {
+    //         maxVotes = count;
+    //         winningOption = option;
+    //       }
+    //     }
+    //   }
+    //   if (winningOption === -1) {
+    //     console.log(`❌ No winning option determined for bet ${bet._id}`);
+    //     return;
+    //   }
+    //   console.log(`Winning option: ${bet.options[winningOption]}`);
+    //   // Convert votes to Map if it's a plain object
+    //   const votesMap =
+    //     bet.votes instanceof Map ? bet.votes : new Map(Object.entries(bet.votes || {}));
+    //   const winners = bet.participants.filter((participant) => {
+    //     const participantId = participant.toString();
+    //     const vote = votesMap.get(participantId);
+    //     console.log(`Participant ${participantId}: voted ${vote !== undefined ? bet.options[vote] : 'did not vote'} - ${vote === winningOption ? '✅ Winner' : '❌ Not winner'}`);
+    //     return vote === winningOption;  // Only winners are those who voted for the winning option
+    //   });
+    //   const totalPrizePool = bet.minAmount * bet.participants.length;
+    //   const platformFee = totalPrizePool * 0.04; // 4% platform fee
+    //   const netPrizePool = totalPrizePool - platformFee;
+    //   let payoutPerWinner = 0;
+    //   if (winners.length > 0) {
+    //     payoutPerWinner = netPrizePool / winners.length;
+    //     await payoutQueue.add('multi-payout', {
+    //       bet,
+    //       winners,
+    //       winningOption,
+    //       payoutPerWinner,
+    //       platformFee
+    //     });
+    //   }
+    //   await this.predoBot.telegram.sendMessage(
+    //     bet.groupId,
+    //     `🎯 Bet "${bet.title}" has been resolved!\n\n` +
+    //       `Winning Option: ${bet.options[winningOption]}\n` +
+    //       `Number of Winners: ${winners.length}\n` +
+    //       `Platform Fee: ${platformFee.toFixed(2)} USDC (4%)\n` +
+    //       `Payout per Winner: ${payoutPerWinner.toFixed(2)} USDC`
+    //   );
+    // } catch (error) {
+    //   console.error('Error processing poll results:', error);
+    //   throw error;
+    // }
   }
 
   public async processUnpaidBets() {
     try {
-      // Get raw data directly from MongoDB to ensure we get the votes
+      // Get unprocessed bets with resolved polls
       const db = mongoose.connection.db;
-      const betsCollection = db.collection('bets');
-      
-      const unprocessedBets = await betsCollection.find({
-        resolved: false,
-        _id: { $in: await Poll.distinct('betId', { resolved: true }) },
-        $where: "return Object.keys(this.votes || {}).length > 0"
-      }).toArray();
+      const unprocessedBets = await db
+        .collection('bets')
+        .aggregate([
+          { $match: { resolved: false } },
+          {
+            $lookup: {
+              from: 'polls',
+              localField: '_id',
+              foreignField: 'betId',
+              as: 'poll'
+            }
+          },
+          { $match: { 'poll.resolved': true } },
+          { $project: { poll: 0 } }
+        ])
+        .toArray();
 
-      console.log(`Found ${unprocessedBets.length} unpaid bets with resolved polls and votes`);
-      
+      console.log(`Found ${unprocessedBets.length} unpaid bets with resolved polls`);
+
       for (const bet of unprocessedBets) {
         console.log('\n========= Processing Bet =========');
         console.log('Bet ID:', bet._id);
         console.log('Title:', bet.title);
-        console.log('Raw votes:', bet.votes);
-        console.log('Options:', bet.options);
 
-        // Convert string option values to numbers
-        const votesMap = new Map();
-        if (bet.votes && typeof bet.votes === 'object') {
-          Object.entries(bet.votes).forEach(([userId, vote]) => {
-            // Convert string vote (e.g., "Yes", "No") to number based on options array index
-            const optionIndex = bet.options.indexOf(vote);
-            if (optionIndex !== -1) {
-              votesMap.set(userId, optionIndex);
-            }
-          });
+        // Find the corresponding poll
+        const poll = await Poll.findOne({
+          betId: bet._id,
+          resolved: true
+        });
+
+        if (!poll) {
+          console.log(`❌ No resolved poll found for bet ${bet._id}`);
+          continue;
         }
-        
-        console.log('Processed votes map:', Object.fromEntries(votesMap));
 
+        console.log('Poll type:', poll.isManualPoll ? 'Manual' : 'AI');
+
+        // Determine winning option based on poll type
+        let winningOption = -1;
+
+        if (!poll.isManualPoll && poll.aiOption !== undefined) {
+          // For AI polls, check if AI option was accepted
+          const votes = Array.from(poll.votes.values());
+          const totalVotes = votes.length;
+          const accepts = votes.filter((v) => v === 1).length;
+
+          console.log(`AI Poll - Total votes: ${totalVotes}, Accepts: ${accepts}`);
+
+          if (accepts / totalVotes > 0.5) {
+            winningOption = poll.aiOption;
+            console.log(`AI option accepted: ${bet.options[winningOption]}`);
+          } else {
+            // Find the option with most votes and make it the new AI option
+            const optionVotes = new Map<number, number>();
+            for (const [_, vote] of poll.votes) {
+              optionVotes.set(vote, (optionVotes.get(vote) || 0) + 1);
+            }
+            
+            let maxVotes = 0;
+            for (const [option, count] of optionVotes.entries()) {
+              if (count > maxVotes) {
+                maxVotes = count;
+                winningOption = option;
+              }
+            }
+            console.log(`Setting majority option as new AI option: ${bet.options[winningOption]}`);
+            poll.aiOption = winningOption;
+          }
+        } else {
+          // For manual polls, count option votes
+          const optionVotes = new Map<number, number>();
+
+          // Convert poll votes to option votes
+          for (const [_, vote] of poll.votes) {
+            optionVotes.set(vote, (optionVotes.get(vote) || 0) + 1);
+          }
+
+          // Find option with most votes
+          let maxVotes = 0;
+          for (const [option, count] of optionVotes.entries()) {
+            console.log(`Option "${bet.options[option]}": ${count} votes`);
+            if (count > maxVotes) {
+              maxVotes = count;
+              winningOption = option;
+            }
+          }
+        }
+
+        if (winningOption === -1) {
+          console.log(`❌ No winning option determined for bet ${bet._id}`);
+          continue;
+        }
+
+        console.log(`Winning option: ${bet.options[winningOption]}`);
+
+        // Find winners who voted for the correct option
         console.log('\nChecking winners:');
         const winners = bet.participants.filter((participant) => {
-          const participantId = participant.toString();
-          const vote = votesMap.get(participantId);
-          console.log(`Participant ${participantId}: voted ${vote}, winning option is ${bet.options[vote]} - ${vote !== undefined ? '✅ Winner' : '❌ Not winner'}`);
-          return vote !== undefined;
+          const participantId = participant;
+          const votes = bet.votes || {};
+          console.log('votes', votes);
+          const vote = votes[`${participantId}`];
+          const isWinner = bet.options.indexOf(vote) === winningOption;
+          console.log(
+            `Participant ${participantId}: voted ${
+              vote !== undefined
+                ? bet.options.filter((option) => option === vote)[0]
+                : 'did not vote'
+            } - ${isWinner ? '✅ Winner' : '❌ Not winner'}`
+          );
+          return isWinner;
         });
 
         console.log(`\nWinners Summary:`);
@@ -438,7 +455,7 @@ export class BetResolverService {
         console.log(`Winner IDs:`, winners);
 
         const totalPrizePool = bet.minAmount * bet.participants.length;
-        const platformFee = totalPrizePool * 0.04;
+        const platformFee = totalPrizePool * 0.05;
         const netPrizePool = totalPrizePool - platformFee;
         const payoutPerWinner = winners.length > 0 ? netPrizePool / winners.length : 0;
 
@@ -454,7 +471,7 @@ export class BetResolverService {
           await payoutQueue.add('multi-payout', {
             bet,
             winners,
-            winningOption: winners[0],
+            winningOption,
             payoutPerWinner,
             platformFee
           });

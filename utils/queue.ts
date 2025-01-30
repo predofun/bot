@@ -114,21 +114,6 @@ payoutQueue.process('multi-payout', async (job) => {
       payoutResults.push(payoutResult);
     }
 
-    // Transfer platform fee
-    if (platformFee > 0) {
-      const platformResult = await sponsorTransferUSDC(
-        env.AGENT_WALLET,
-        new PublicKey(env.REVENUE_WALLET),
-        platformFee
-      );
-
-      if (!platformResult?.success) {
-        throw new Error('Failed to process platform fee');
-      }
-
-      payoutResults.push(platformResult);
-    }
-
     await Bet.findByIdAndUpdate(bet._id, {
       resolved: true,
       winner: bet.options[winningOption],
