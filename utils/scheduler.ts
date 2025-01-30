@@ -401,15 +401,26 @@ export class BetResolverService {
       console.log(`Found ${unprocessedBets.length} unpaid bets with resolved polls`);
 
       for (const bet of unprocessedBets) {
+        console.log(`\n========= Processing Bet ${bet._id} =========`);
+        console.log(`Title: "${bet.title}"`);
+        console.log(`Options:`, bet.options);
+        console.log(`Participants:`, bet.participants);
+
         const poll = await Poll.findOne({
           betId: bet._id,
           resolved: true
         });
 
         if (!poll) {
-          console.log(`No resolved poll found for bet ${bet._id}`);
+          console.log(`❌ No resolved poll found for bet ${bet._id}`);
           continue;
         }
+
+        console.log(`\nPoll Details:`);
+        console.log(`Poll ID: ${poll._id}`);
+        console.log(`Is Manual Poll: ${poll.isManualPoll}`);
+        console.log(`AI Option: ${poll.aiOption}`);
+        console.log(`Poll Votes:`, Object.fromEntries(poll.votes));
 
         // Get winning option from poll
         let winningOption = -1;
@@ -418,52 +429,77 @@ export class BetResolverService {
           const votes = Array.from(poll.votes.values());
           const totalVotes = votes.length;
           const accepts = votes.filter((v) => v === 1).length;
+          console.log(`\nAI Poll Resolution:`);
+          console.log(`Total Votes: ${totalVotes}`);
+          console.log(`Accept Votes: ${accepts}`);
+          console.log(`Accept Ratio: ${accepts / totalVotes}`);
+
           if (accepts / totalVotes > 0.5) {
             winningOption = poll.aiOption;
+            console.log(`✅ AI option ${winningOption} accepted`);
+          } else {
+            console.log(`❌ AI option rejected`);
           }
         } else {
           // For manual polls, count votes
+          console.log(`\nManual Poll Vote Count:`);
           const votes = Array.from(poll.votes.entries());
           const optionVotes = new Map<number, number>();
           for (const [_, vote] of votes) {
             optionVotes.set(vote, (optionVotes.get(vote) || 0) + 1);
           }
 
+          console.log('Votes per option:', Object.fromEntries(optionVotes));
+
           // Find option with most votes
           let maxVotes = 0;
           for (const [option, count] of optionVotes.entries()) {
+            console.log(`Option ${option}: ${count} votes`);
             if (count > maxVotes) {
               maxVotes = count;
               winningOption = option;
             }
           }
+          console.log(`✅ Option ${winningOption} won with ${maxVotes} votes`);
         }
 
         if (winningOption === -1) {
-          console.log(`No winning option determined for bet ${bet._id}`);
+          console.log(`❌ No winning option determined for bet ${bet._id}`);
           continue;
         }
 
         // Calculate winners and payouts
-        console.log(bet.votes);
+        console.log(`\nBet Votes:`, Object.fromEntries(bet.votes));
         const votesMap =
           bet.votes instanceof Map ? bet.votes : new Map(Object.entries(bet.votes || {}));
-        console.log('votes for bets', votesMap);
+        console.log('Processed votes map:', Object.fromEntries(votesMap));
 
-        const winners = bet.participants.filter(
-          (participant) => votesMap.get(participant.toString()) === winningOption
-        );
+        console.log('\nChecking winners:');
+        const winners = bet.participants.filter((participant) => {
+          const participantId = participant.toString();
+          const vote = votesMap.get(participantId);
+          console.log(`Participant ${participantId}: voted ${vote}, winning option is ${winningOption} - ${vote === winningOption ? '✅ Winner' : '❌ Not winner'}`);
+          return vote === winningOption;
+        });
 
-        console.log('winners for bets', winners);
+        console.log(`\nWinners Summary:`);
+        console.log(`Total Winners: ${winners.length}`);
+        console.log(`Winner IDs:`, winners);
 
         const totalPrizePool = bet.minAmount * bet.participants.length;
-        const platformFee = totalPrizePool * 0.05;
+        const platformFee = totalPrizePool * 0.04;
         const netPrizePool = totalPrizePool - platformFee;
         const payoutPerWinner = winners.length > 0 ? netPrizePool / winners.length : 0;
 
+        console.log(`\nPayout Details:`);
+        console.log(`Total Prize Pool: ${totalPrizePool} USDC`);
+        console.log(`Platform Fee: ${platformFee} USDC`);
+        console.log(`Net Prize Pool: ${netPrizePool} USDC`);
+        console.log(`Payout Per Winner: ${payoutPerWinner} USDC`);
+
         // Queue payout
         if (winners.length > 0) {
-          console.log(`Queueing payout for bet ${bet._id} with ${winners.length} winners`);
+          console.log(`\n✅ Queueing payout for bet ${bet._id}`);
           await payoutQueue.add('multi-payout', {
             bet,
             winners,
@@ -472,8 +508,10 @@ export class BetResolverService {
             platformFee
           });
         } else {
-          console.log(`No winners found for bet ${bet._id}`);
+          console.log(`\n❌ No winners to pay out for bet ${bet._id}`);
         }
+
+        console.log('=========================================\n');
       }
     } catch (error) {
       console.error('Error processing unpaid bets:', error);
