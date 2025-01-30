@@ -16,7 +16,7 @@ export class BetResolverService {
 
   constructor(bot?: Telegraf) {
     this.connection = new Connection(env.HELIUS_RPC_URL, 'confirmed');
-    this.cronJob = new CronJob('0 */15 * * * *', this.checkExpiredBets.bind(this));
+    this.cronJob = new CronJob('0 */2 * * * *', this.checkExpiredBets.bind(this));
     this.predoBot = bot || new Telegraf(env.TELEGRAM_BOT_TOKEN);
   }
 
@@ -449,10 +449,13 @@ export class BetResolverService {
         const votesMap = bet.votes instanceof Map ? 
           bet.votes : 
           new Map(Object.entries(bet.votes || {}));
+        console.log('votes for bets', votesMap);
 
         const winners = bet.participants.filter(participant => 
           votesMap.get(participant.toString()) === winningOption
         );
+
+        console.log('winners for bets', winners);
 
         const totalPrizePool = bet.minAmount * bet.participants.length;
         const platformFee = totalPrizePool * 0.05;
