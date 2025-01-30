@@ -397,10 +397,10 @@ export class BetResolverService {
         resolved: false,
         _id: { $in: await Poll.distinct('betId', { resolved: true }) }
       });
-
       console.log(`Found ${unprocessedBets.length} unpaid bets with resolved polls`);
-
+      
       for (const bet of unprocessedBets) {
+        console.log('bet:', bet);
         console.log(`\n========= Processing Bet ${bet._id} =========`);
         console.log(`Title: "${bet.title}"`);
         console.log(`Options:`, bet.options);
