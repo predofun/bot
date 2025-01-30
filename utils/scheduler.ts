@@ -350,9 +350,8 @@ export class BetResolverService {
       await Poll.findByIdAndUpdate(poll._id, { resolved: true });
 
       // Convert votes to Map if it's a plain object
-      const votesMap = bet.votes instanceof Map ? 
-        bet.votes : 
-        new Map(Object.entries(bet.votes || {}));
+      const votesMap =
+        bet.votes instanceof Map ? bet.votes : new Map(Object.entries(bet.votes || {}));
 
       // Get winners based on winning option
       const winners = bet.participants.filter((participant) => {
@@ -402,9 +401,9 @@ export class BetResolverService {
       console.log(`Found ${unprocessedBets.length} unpaid bets with resolved polls`);
 
       for (const bet of unprocessedBets) {
-        const poll = await Poll.findOne({ 
+        const poll = await Poll.findOne({
           betId: bet._id,
-          resolved: true 
+          resolved: true
         });
 
         if (!poll) {
@@ -418,7 +417,7 @@ export class BetResolverService {
           // For AI polls, use the AI option if it was accepted
           const votes = Array.from(poll.votes.values());
           const totalVotes = votes.length;
-          const accepts = votes.filter(v => v === 1).length;
+          const accepts = votes.filter((v) => v === 1).length;
           if (accepts / totalVotes > 0.5) {
             winningOption = poll.aiOption;
           }
@@ -429,7 +428,7 @@ export class BetResolverService {
           for (const [_, vote] of votes) {
             optionVotes.set(vote, (optionVotes.get(vote) || 0) + 1);
           }
-          
+
           // Find option with most votes
           let maxVotes = 0;
           for (const [option, count] of optionVotes.entries()) {
@@ -446,13 +445,13 @@ export class BetResolverService {
         }
 
         // Calculate winners and payouts
-        const votesMap = bet.votes instanceof Map ? 
-          bet.votes : 
-          new Map(Object.entries(bet.votes || {}));
+        console.log(bet.votes);
+        const votesMap =
+          bet.votes instanceof Map ? bet.votes : new Map(Object.entries(bet.votes || {}));
         console.log('votes for bets', votesMap);
 
-        const winners = bet.participants.filter(participant => 
-          votesMap.get(participant.toString()) === winningOption
+        const winners = bet.participants.filter(
+          (participant) => votesMap.get(participant.toString()) === winningOption
         );
 
         console.log('winners for bets', winners);
