@@ -16,7 +16,7 @@ export class BetResolverService {
 
   constructor(bot?: Telegraf) {
     this.connection = new Connection(env.HELIUS_RPC_URL, 'confirmed');
-    this.cronJob = new CronJob('0 */1 * * * *', this.checkExpiredBets.bind(this));
+    this.cronJob = new CronJob('0 */5 * * * *', this.checkExpiredBets.bind(this));
     this.predoBot = bot || new Telegraf(env.TELEGRAM_BOT_TOKEN);
   }
 
