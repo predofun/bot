@@ -143,7 +143,7 @@ Output Query:
 
     // Get the final response using generateObject
     const { object } = await generateObject({
-      model: google('gemini-2.0-flash-exp', {
+      model: google('gemini-1.5-flash', {
         useSearchGrounding: true
       }),
       schema: z.object({
